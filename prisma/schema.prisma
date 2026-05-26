@@ -1,0 +1,110 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../app/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Sindicato {
+  id             Int       @id @default(autoincrement())
+  nome           String    @unique
+  tipo           String    @default("patronal")
+  cnpj           String?
+  afinidadeFieam String?
+  observacoes    String?
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  empresas    Empresa[]
+  presidentes PresidenteSindicato[]
+}
+
+model PresidenteSindicato {
+  id          Int       @id @default(autoincrement())
+  sindicatoId Int
+  nome        String
+  cargo       String?
+  email       String?
+  telefone    String?
+  dataInicio  DateTime?
+  dataFim     DateTime?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  sindicato Sindicato @relation(fields: [sindicatoId], references: [id], onDelete: Cascade)
+}
+
+model Empresa {
+  id                 Int       @id @default(autoincrement())
+  cnpj               String    @unique
+  razaoSocial        String
+  cnae               String?
+  ramoAtividade      String?
+  perfil             String?
+  situacaoRFB        String?
+  afinidade          String?
+  sindicatoId        Int?
+  dataSindicalizacao DateTime
+  dataVencimento     DateTime
+  status             String    @default("ativo")
+  observacoes        String?
+  createdAt          DateTime  @default(now())
+  updatedAt          DateTime  @updatedAt
+
+  sindicato  Sindicato?        @relation(fields: [sindicatoId], references: [id])
+  conselhos  ConselhoEmpresa[]
+  historico  HistoricoAlteracao[]
+}
+
+model Conselho {
+  id        Int       @id @default(autoincrement())
+  nome      String    @unique
+  tipo      String    @default("conselho")
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+
+  empresas ConselhoEmpresa[]
+}
+
+model ConselhoEmpresa {
+  id         Int      @id @default(autoincrement())
+  empresaId  Int
+  conselhoId Int
+  createdAt  DateTime @default(now())
+
+  empresa  Empresa  @relation(fields: [empresaId], references: [id], onDelete: Cascade)
+  conselho Conselho @relation(fields: [conselhoId], references: [id], onDelete: Cascade)
+
+  @@unique([empresaId, conselhoId])
+}
+
+model Usuario {
+  id        Int      @id @default(autoincrement())
+  email     String   @unique
+  nome      String
+  perfil    String   @default("visualizador")
+  senhaHash String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  historico HistoricoAlteracao[]
+}
+
+model HistoricoAlteracao {
+  id            Int      @id @default(autoincrement())
+  empresaId     Int?
+  empresaNome   String
+  usuarioId     Int?
+  usuarioNome   String
+  acao          String
+  campo         String?
+  valorAnterior String?
+  valorNovo     String?
+  createdAt     DateTime @default(now())
+
+  empresa Empresa? @relation(fields: [empresaId], references: [id], onDelete: SetNull)
+  usuario Usuario? @relation(fields: [usuarioId], references: [id], onDelete: SetNull)
+}

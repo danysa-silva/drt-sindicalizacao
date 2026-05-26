@@ -1,0 +1,18 @@
+{
+  "permissions": {
+    "allow": [
+      "PowerShell(netstat -an)",
+      "PowerShell(cd \"c:\\\\Users\\\\danielle.sa\\\\Documents\\\\drt-sindicalizacao\"; node -e \"const {PrismaClient} = require\\('./app/generated/prisma/client'\\); const {PrismaBetterSqlite3} = require\\('@prisma/adapter-better-sqlite3'\\); const path = require\\('path'\\); const db = path.join\\(process.cwd\\(\\), 'dev.db'\\); const p = new PrismaClient\\({adapter: new PrismaBetterSqlite3\\({url: db}\\)}\\); p.empresa.count\\(\\).then\\(c => { console.log\\('count:', c\\); p.\\\\$disconnect\\(\\); }\\).catch\\(e => { console.log\\('error:', e.message\\); p.\\\\$disconnect\\(\\); }\\)\")",
+      "PowerShell(cd \"c:\\\\Users\\\\danielle.sa\\\\Documents\\\\drt-sindicalizacao\"; if \\(Test-Path \"dev.db\"\\) { $size = \\(Get-Item \"dev.db\"\\).Length; Write-Host \"Database exists, size: $size bytes\" } else { Write-Host \"No database file\" })",
+      "PowerShell(Get-Process -Id 24828)",
+      "PowerShell(Get-Process | Where-Object { $_.Id -eq 24828 })",
+      "PowerShell(Get-Process | Where-Object { $_.Id -eq 24828 } | Select-Object CPU, WorkingSet)",
+      "PowerShell(Stop-Process -Name \"node\" -ErrorAction SilentlyContinue)",
+      "PowerShell(Rename-Item \"C:\\\\Users\\\\danielle.sa\\\\Documents\\\\drt-sindicalizacao\\\\middleware.ts\" \"proxy.ts\")",
+      "Bash(ls \"C:/Users/danielle.sa/\" | grep -i panorama)",
+      "Read(//c/Users/danielle.sa/**)",
+      "Bash(git init *)",
+      "Bash(git add *)"
+    ]
+  }
+}
