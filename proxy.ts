@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { verifyToken } from "@/lib/auth";
+import { verifyToken } from "@/lib/verify-token";
 
 const PUBLICAS = ["/login", "/cadastro", "/api/auth/login", "/api/auth/register"];
 
