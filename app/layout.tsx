@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Geist } from "next/font/google";
 import NavBar from "./components/NavBar";
 import { UserProvider } from "./components/UserContext";
+import AuthGuard from "./components/AuthGuard";
 import "./globals.css";
 
 const geist = Geist({ subsets: ["latin"], variable: "--font-geist" });
@@ -16,6 +17,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     <html lang="pt-BR" className={geist.variable}>
       <body className="min-h-screen bg-gray-50 antialiased">
         <UserProvider>
+          <AuthGuard />
           <NavBar />
           {children}
         </UserProvider>
