@@ -7,9 +7,9 @@ export type TokenPayload = {
   perfil: string;
 };
 
-const SECRET = new TextEncoder().encode(
-  process.env.JWT_SECRET ?? "drt-fieam-sindicalizacao-2026"
-);
+const jwtSecret = process.env.JWT_SECRET;
+if (!jwtSecret) throw new Error("JWT_SECRET não configurado");
+const SECRET = new TextEncoder().encode(jwtSecret);
 
 export async function verifyToken(token: string): Promise<TokenPayload | null> {
   try {

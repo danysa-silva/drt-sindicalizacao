@@ -1,9 +1,9 @@
 import { SignJWT, jwtVerify } from "jose";
 import { NextRequest } from "next/server";
 
-const SECRET = new TextEncoder().encode(
-  process.env.JWT_SECRET ?? "drt-fieam-sindicalizacao-2026"
-);
+const jwtSecret = process.env.JWT_SECRET;
+if (!jwtSecret) throw new Error("JWT_SECRET não configurado");
+const SECRET = new TextEncoder().encode(jwtSecret);
 
 export type TokenPayload = {
   id: number;
