@@ -1,8 +1,34 @@
 import { NextRequest } from "next/server";
+import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { getUsuarioFromRequest, podeAlterar } from "@/lib/auth";
 
 type Params = { params: Promise<{ id: string }> };
+
+const sindicatoSchema = z.object({
+  nome: z
+    .string({ error: "Nome do sindicato é obrigatório" })
+    .trim()
+    .min(1, { message: "Nome do sindicato não pode ser vazio" }),
+  tipo: z.string().optional().nullable().transform((v) => (v == null || v === "" ? "patronal" : v)),
+  cnpj: z
+    .string()
+    .nullish()
+    .transform((v) => (v ? v.replace(/\D/g, "") : null))
+    .refine((v) => v === null || v === undefined || v.length === 14, {
+      message: "CNPJ deve ter 14 dígitos",
+    }),
+  validadeMandato: z
+    .string()
+    .nullish()
+    .refine(
+      (v) => v == null || v === "" || !isNaN(new Date(v).getTime()),
+      { message: "Data de validade do mandato inválida" }
+    )
+    .transform((v) => (v === "" || v == null ? null : v)),
+  afinidadeFieam: z.string().nullish(),
+  observacoes: z.string().nullish(),
+});
 
 export async function GET(_request: NextRequest, { params }: Params) {
   const { id } = await params;
@@ -25,7 +51,13 @@ export async function PUT(request: NextRequest, { params }: Params) {
 
   const { id } = await params;
   const body = await request.json();
-  const { nome, tipo, cnpj, afinidadeFieam, validadeMandato, observacoes } = body;
+  const resultado = sindicatoSchema.safeParse(body);
+  if (!resultado.success) {
+    const mensagem = resultado.error.issues[0]?.message ?? "Dados inválidos";
+    return Response.json({ error: mensagem }, { status: 400 });
+  }
+
+  const { nome, tipo, cnpj, afinidadeFieam, validadeMandato, observacoes } = resultado.data;
 
   const existing = await prisma.sindicato.findFirst({
     where: { nome, NOT: { id: Number(id) } },
@@ -39,7 +71,7 @@ export async function PUT(request: NextRequest, { params }: Params) {
     data: {
       nome,
       tipo,
-      cnpj: cnpj ? cnpj.replace(/\D/g, "") : null,
+      cnpj: cnpj ?? null,
       afinidadeFieam: afinidadeFieam ?? null,
       validadeMandato: validadeMandato ?? null,
       observacoes: observacoes ?? null,
