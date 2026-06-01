@@ -92,13 +92,15 @@ model ConselhoEmpresa {
 }
 
 model Usuario {
-  id        Int      @id @default(autoincrement())
-  email     String   @unique
-  nome      String
-  perfil    String   @default("visualizador")
-  senhaHash String
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id            Int       @id @default(autoincrement())
+  email         String    @unique
+  nome          String
+  perfil        String    @default("visualizador")
+  senhaHash     String
+  loginAttempts Int       @default(0)
+  bloqueadoAte  DateTime?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
 
   historico HistoricoAlteracao[]
 }
