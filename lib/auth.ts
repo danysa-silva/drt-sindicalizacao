@@ -29,6 +29,16 @@ export async function verifyToken(token: string): Promise<TokenPayload | null> {
   }
 }
 
+export function buildTokenCookie(token: string): string {
+  const secure = process.env.NODE_ENV === "production" ? "; Secure" : "";
+  return `token=${token}; HttpOnly; Path=/; Max-Age=604800; SameSite=Lax${secure}`;
+}
+
+export function buildLogoutCookie(): string {
+  const secure = process.env.NODE_ENV === "production" ? "; Secure" : "";
+  return `token=; HttpOnly; Path=/; Max-Age=0; SameSite=Lax${secure}`;
+}
+
 export function podeAlterar(perfil: string | null | undefined): boolean {
   const p = perfil?.trim().toLowerCase() ?? "";
   return p === "admin" || p === "editor";

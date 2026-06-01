@@ -1,7 +1,7 @@
 import { NextRequest } from "next/server";
 import bcrypt from "bcryptjs";
 import { prisma } from "@/lib/prisma";
-import { signToken } from "@/lib/auth";
+import { signToken, buildTokenCookie } from "@/lib/auth";
 
 export async function POST(request: NextRequest) {
   const { email, senha } = await request.json();
@@ -26,7 +26,7 @@ export async function POST(request: NextRequest) {
     { id: usuario.id, email: usuario.email, nome: usuario.nome, perfil: usuario.perfil },
     {
       headers: {
-        "Set-Cookie": `token=${token}; HttpOnly; Path=/; Max-Age=${60 * 60 * 24 * 7}; SameSite=Lax`,
+        "Set-Cookie": buildTokenCookie(token),
       },
     }
   );
