@@ -29,6 +29,11 @@ export async function verifyToken(token: string): Promise<TokenPayload | null> {
   }
 }
 
+export function podeAlterar(perfil: string | null | undefined): boolean {
+  const p = perfil?.trim().toLowerCase() ?? "";
+  return p === "admin" || p === "editor";
+}
+
 export async function getUsuarioFromRequest(req: NextRequest): Promise<TokenPayload | null> {
   const token = req.cookies.get("token")?.value;
   if (!token) return null;

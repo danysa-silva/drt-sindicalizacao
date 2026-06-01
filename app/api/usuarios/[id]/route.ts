@@ -6,14 +6,17 @@ type Params = { params: Promise<{ id: string }> };
 
 export async function PUT(request: NextRequest, { params }: Params) {
   const usuario = await getUsuarioFromRequest(request);
-  if (!usuario || usuario.perfil !== "admin") {
+  if (!usuario) {
+    return Response.json({ error: "Não autenticado" }, { status: 401 });
+  }
+  if (usuario.perfil?.trim().toLowerCase() !== "admin") {
     return Response.json({ error: "Acesso negado" }, { status: 403 });
   }
 
   const { id } = await params;
   const { perfil } = await request.json();
 
-  if (perfil !== "admin" && perfil !== "visualizador") {
+  if (perfil !== "admin" && perfil !== "editor" && perfil !== "visualizador") {
     return Response.json({ error: "Perfil inválido" }, { status: 400 });
   }
 

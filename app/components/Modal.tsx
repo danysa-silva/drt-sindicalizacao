@@ -6,9 +6,10 @@ type Props = {
   titulo: string;
   onFechar: () => void;
   children: React.ReactNode;
+  largo?: boolean;
 };
 
-export default function Modal({ titulo, onFechar, children }: Props) {
+export default function Modal({ titulo, onFechar, children, largo }: Props) {
   useEffect(() => {
     function onKey(e: KeyboardEvent) {
       if (e.key === "Escape") onFechar();
@@ -19,7 +20,7 @@ export default function Modal({ titulo, onFechar, children }: Props) {
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-      <div className="w-full max-w-2xl rounded-xl bg-white shadow-xl">
+      <div className={`w-full ${largo ? "max-w-5xl" : "max-w-2xl"} rounded-xl bg-white shadow-xl`}>
         <div className="flex items-center justify-between border-b px-6 py-4">
           <h2 className="text-lg font-semibold text-gray-800">{titulo}</h2>
           <button

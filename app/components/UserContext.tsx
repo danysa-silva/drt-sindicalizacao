@@ -4,10 +4,10 @@ import { createContext, useContext, useEffect, useState, ReactNode } from "react
 
 export type Usuario = { id: number; email: string; nome: string; perfil: string };
 
-const UserContext = createContext<Usuario | null>(null);
+const UserContext = createContext<Usuario | null | undefined>(undefined);
 
 export function UserProvider({ children }: { children: ReactNode }) {
-  const [usuario, setUsuario] = useState<Usuario | null>(null);
+  const [usuario, setUsuario] = useState<Usuario | null | undefined>(undefined);
 
   useEffect(() => {
     fetch("/api/auth/me")

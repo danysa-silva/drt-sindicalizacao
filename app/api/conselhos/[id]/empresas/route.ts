@@ -1,9 +1,18 @@
 import { NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { getUsuarioFromRequest, podeAlterar } from "@/lib/auth";
 
 type Params = { params: Promise<{ id: string }> };
 
 export async function POST(request: NextRequest, { params }: Params) {
+  const usuario = await getUsuarioFromRequest(request);
+  if (!usuario) {
+    return Response.json({ error: "Não autenticado" }, { status: 401 });
+  }
+  if (!podeAlterar(usuario.perfil)) {
+    return Response.json({ error: "Acesso negado" }, { status: 403 });
+  }
+
   const { id } = await params;
   const { empresaId } = await request.json();
 

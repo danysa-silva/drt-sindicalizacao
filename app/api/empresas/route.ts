@@ -1,6 +1,6 @@
 import { NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { getUsuarioFromRequest } from "@/lib/auth";
+import { getUsuarioFromRequest, podeAlterar } from "@/lib/auth";
 import { registrarAuditoria } from "@/lib/auditoria";
 
 export async function GET() {
@@ -13,7 +13,10 @@ export async function GET() {
 
 export async function POST(request: NextRequest) {
   const usuario = await getUsuarioFromRequest(request);
-  if (!usuario || usuario.perfil !== "admin") {
+  if (!usuario) {
+    return Response.json({ error: "Não autenticado" }, { status: 401 });
+  }
+  if (!podeAlterar(usuario.perfil)) {
     return Response.json({ error: "Acesso negado" }, { status: 403 });
   }
 

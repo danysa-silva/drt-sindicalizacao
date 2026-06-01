@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback } from "react";
 import Modal from "./Modal";
 import SindicatoForm from "./SindicatoForm";
 import PresidentesModal from "./PresidentesModal";
+import EmpresasSindicatoModal from "./EmpresasSindicatoModal";
 
 type Presidente = {
   id: number;
@@ -19,6 +20,7 @@ type Sindicato = {
   tipo: string;
   cnpj: string | null;
   afinidadeFieam: string | null;
+  validadeMandato: string | null;
   observacoes: string | null;
   presidentes: Presidente[];
   _count: { empresas: number };
@@ -46,7 +48,7 @@ export default function ListaSindicatos() {
   const [sindicatos, setSindicatos] = useState<Sindicato[]>([]);
   const [filtro, setFiltro] = useState("");
   const [filtroTipo, setFiltroTipo] = useState("todos");
-  const [modal, setModal] = useState<"novo" | "editar" | "excluir" | "presidentes" | null>(null);
+  const [modal, setModal] = useState<"novo" | "editar" | "excluir" | "presidentes" | "empresas" | null>(null);
   const [selecionado, setSelecionado] = useState<Sindicato | null>(null);
   const [carregando, setCarregando] = useState(true);
 
@@ -69,9 +71,21 @@ export default function ListaSindicatos() {
     carregar();
   }
 
+  function corresponde(nome: string, busca: string): boolean {
+    const n = nome.toLowerCase();
+    const partes = busca.toLowerCase().split("*").map((p) => p.trim()).filter(Boolean);
+    if (partes.length === 0) return true;
+    let pos = 0;
+    for (const parte of partes) {
+      const idx = n.indexOf(parte, pos);
+      if (idx === -1) return false;
+      pos = idx + parte.length;
+    }
+    return true;
+  }
+
   const filtrados = sindicatos.filter((s) => {
-    const texto = filtro.toLowerCase();
-    const passaTexto = !filtro || s.nome.toLowerCase().includes(texto) || (s.cnpj?.includes(filtro.replace(/\D/g, "")) ?? false);
+    const passaTexto = !filtro || corresponde(s.nome, filtro) || (s.cnpj?.includes(filtro.replace(/\D/g, "")) ?? false);
     const passaTipo = filtroTipo === "todos" || s.tipo === filtroTipo;
     return passaTexto && passaTipo;
   });
@@ -135,6 +149,7 @@ export default function ListaSindicatos() {
                   <th className="px-4 py-3 text-left">Tipo</th>
                   <th className="px-4 py-3 text-left">CNPJ</th>
                   <th className="px-4 py-3 text-left">Afinidade FIEAM</th>
+                  <th className="px-4 py-3 text-left">Validade Mandato</th>
                   <th className="px-4 py-3 text-left">Empresas</th>
                   <th className="px-4 py-3 text-left">Presidente</th>
                   <th className="px-4 py-3 text-right">Ações</th>
@@ -143,8 +158,8 @@ export default function ListaSindicatos() {
               <tbody className="divide-y divide-gray-100">
                 {filtrados.map((s) => (
                   <tr key={s.id} className="hover:bg-gray-50">
-                    <td className="px-4 py-3 font-medium text-gray-900 max-w-[260px]">
-                      <div className="truncate" title={s.nome}>{s.nome}</div>
+                    <td className="px-4 py-3 font-medium text-gray-900">
+                      {s.nome}
                     </td>
                     <td className="px-4 py-3">
                       <span className={`rounded-full px-2 py-0.5 text-xs font-medium capitalize ${badgeTipo(s.tipo)}`}>
@@ -161,8 +176,20 @@ export default function ListaSindicatos() {
                         </span>
                       ) : <span className="text-gray-400 text-xs">—</span>}
                     </td>
+                    <td className="px-4 py-3 text-xs text-gray-600">
+                      {s.validadeMandato || <span className="text-gray-400">—</span>}
+                    </td>
                     <td className="px-4 py-3 text-center text-sm text-gray-600 font-medium">
-                      {s._count.empresas}
+                      {s._count.empresas > 0 ? (
+                        <button
+                          onClick={() => { setSelecionado(s); setModal("empresas"); }}
+                          className="text-blue-600 hover:underline font-semibold"
+                        >
+                          {s._count.empresas}
+                        </button>
+                      ) : (
+                        <span className="text-gray-400">0</span>
+                      )}
                     </td>
                     <td className="px-4 py-3 text-xs text-gray-600 max-w-[160px]">
                       {s.presidentes[0] ? (
@@ -173,6 +200,12 @@ export default function ListaSindicatos() {
                       ) : <span className="text-gray-400">—</span>}
                     </td>
                     <td className="px-4 py-3 text-right whitespace-nowrap">
+                      <button
+                        onClick={() => { setSelecionado(s); setModal("empresas"); }}
+                        className="mr-2 text-green-600 hover:underline text-xs"
+                      >
+                        Empresas
+                      </button>
                       <button
                         onClick={() => { setSelecionado(s); setModal("presidentes"); }}
                         className="mr-2 text-indigo-600 hover:underline text-xs"
@@ -217,6 +250,12 @@ export default function ListaSindicatos() {
             onSalvar={() => { fecharModal(); carregar(); }}
             onCancelar={fecharModal}
           />
+        </Modal>
+      )}
+
+      {modal === "empresas" && selecionado && (
+        <Modal titulo={`Empresas — ${selecionado.nome}`} onFechar={fecharModal} largo>
+          <EmpresasSindicatoModal sindicatoId={selecionado.id} nomeSindicato={selecionado.nome} onFechar={fecharModal} />
         </Modal>
       )}
 

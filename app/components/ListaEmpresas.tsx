@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback, useRef } from "react";
+import * as XLSX from "xlsx";
 import Modal from "./Modal";
 import EmpresaForm from "./EmpresaForm";
 import { useUsuario } from "./UserContext";
@@ -79,6 +80,7 @@ export default function ListaEmpresas() {
   const [filtro, setFiltro] = useState("");
   const [filtroStatus, setFiltroStatus] = useState("todos");
   const [filtroAfinidade, setFiltroAfinidade] = useState("todas");
+  const [filtroSindicato, setFiltroSindicato] = useState("todos");
   const [modal, setModal] = useState<"novo" | "editar" | "excluir" | "importar" | "ver" | null>(null);
   const [selecionada, setSelecionada] = useState<Empresa | null>(null);
   const [carregando, setCarregando] = useState(true);
@@ -114,40 +116,27 @@ export default function ListaEmpresas() {
 
   function fecharModal() { setModal(null); setSelecionada(null); setResultadoImport(null); }
 
-  function exportarCSV() {
-    const cabecalho = [
-      "CNPJ", "Razão Social", "Perfil", "CNAE", "Ramo de Atividade",
-      "Situação RFB", "Afinidade", "Sindicato", "Tipo Sindicato",
-      "Data Sindicalização", "Data Vencimento", "Status", "Observações",
-    ];
-    const escape = (v: string | null | undefined) => {
-      const s = v ?? "";
-      return s.includes(";") || s.includes('"') || s.includes("\n") ? `"${s.replace(/"/g, '""')}"` : s;
-    };
-    const linhas = filtradas.map((e) => [
-      formatarCNPJ(e.cnpj),
-      e.razaoSocial,
-      e.perfil,
-      e.cnae,
-      e.ramoAtividade,
-      e.situacaoRFB,
-      e.afinidade,
-      e.sindicato?.nome,
-      e.sindicato?.tipo,
-      formatarData(e.dataSindicalizacao),
-      formatarData(e.dataVencimento),
-      e.status,
-      e.observacoes,
-    ].map(escape).join(";"));
+  function exportarExcel() {
+    const dados = filtradas.map((e) => ({
+      "CNPJ": formatarCNPJ(e.cnpj),
+      "Razão Social": e.razaoSocial,
+      "Perfil": e.perfil ?? "",
+      "CNAE": e.cnae ?? "",
+      "Ramo de Atividade": e.ramoAtividade ?? "",
+      "Situação RFB": e.situacaoRFB ?? "",
+      "Afinidade": e.afinidade ?? "",
+      "Sindicato": e.sindicato?.nome ?? "",
+      "Tipo Sindicato": e.sindicato?.tipo ?? "",
+      "Data Sindicalização": formatarData(e.dataSindicalizacao),
+      "Data Vencimento": formatarData(e.dataVencimento),
+      "Status DRT": e.status,
+      "Observações": e.observacoes ?? "",
+    }));
 
-    const csv = "﻿" + [cabecalho.join(";"), ...linhas].join("\n");
-    const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = `empresas_sindicalizadas_${new Date().toISOString().slice(0, 10)}.csv`;
-    a.click();
-    URL.revokeObjectURL(url);
+    const ws = XLSX.utils.json_to_sheet(dados);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Empresas");
+    XLSX.writeFile(wb, `empresas_sindicalizadas_${new Date().toISOString().slice(0, 10)}.xlsx`);
   }
 
   async function handleImport(e: React.FormEvent) {
@@ -180,20 +169,41 @@ export default function ListaEmpresas() {
     URL.revokeObjectURL(url);
   }
 
+  function corresponde(texto: string, busca: string): boolean {
+    const t = texto.toLowerCase();
+    const partes = busca.toLowerCase().split("*").map((p) => p.trim()).filter(Boolean);
+    if (partes.length === 0) return true;
+    let pos = 0;
+    for (const parte of partes) {
+      const idx = t.indexOf(parte, pos);
+      if (idx === -1) return false;
+      pos = idx + parte.length;
+    }
+    return true;
+  }
+
+  const sindicatosDisponiveis = Array.from(
+    new Map(
+      empresas
+        .filter((e) => e.sindicato)
+        .map((e) => [e.sindicato!.id, e.sindicato!])
+    ).values()
+  ).sort((a, b) => a.nome.localeCompare(b.nome));
+
   const filtradas = empresas.filter((e) => {
-    const texto = filtro.toLowerCase();
+    const cnpjBusca = filtro.replace(/\D/g, "");
     const passaTexto =
       !filtro ||
-      e.razaoSocial.toLowerCase().includes(texto) ||
-      e.cnpj.includes(filtro.replace(/\D/g, "")) ||
-      (e.sindicato?.nome.toLowerCase().includes(texto) ?? false) ||
-      (e.cnae?.toLowerCase().includes(texto) ?? false) ||
-      (e.ramoAtividade?.toLowerCase().includes(texto) ?? false);
+      corresponde(e.razaoSocial, filtro) ||
+      (cnpjBusca.length > 0 && e.cnpj.includes(cnpjBusca));
     const passaStatus = filtroStatus === "todos" || e.status === filtroStatus;
     const passaAfinidade =
       filtroAfinidade === "todas" ||
       (e.afinidade?.toUpperCase() ?? "") === filtroAfinidade.toUpperCase();
-    return passaTexto && passaStatus && passaAfinidade;
+    const passaSindicato =
+      filtroSindicato === "todos" ||
+      (filtroSindicato === "sem_sindicato" ? !e.sindicatoId : e.sindicatoId === Number(filtroSindicato));
+    return passaTexto && passaStatus && passaAfinidade && passaSindicato;
   });
 
   return (
@@ -226,6 +236,17 @@ export default function ListaEmpresas() {
             <option value="MÉDIO">Afinidade Média</option>
             <option value="BAIXO">Afinidade Baixa</option>
           </select>
+          <select
+            value={filtroSindicato}
+            onChange={(e) => setFiltroSindicato(e.target.value)}
+            className="rounded-lg border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 max-w-xs"
+          >
+            <option value="todos">Todos os sindicatos</option>
+            <option value="sem_sindicato">Sem sindicato</option>
+            {sindicatosDisponiveis.map((s) => (
+              <option key={s.id} value={s.id}>{s.nome}</option>
+            ))}
+          </select>
         </div>
         <div className="flex gap-2">
           {isAdmin && (
@@ -237,7 +258,7 @@ export default function ListaEmpresas() {
             </button>
           )}
           <button
-            onClick={exportarCSV}
+            onClick={exportarExcel}
             className="inline-flex items-center gap-1 rounded-lg border border-green-600 bg-green-50 px-3 py-2 text-sm font-medium text-green-700 hover:bg-green-100 transition"
           >
             ⬇ Exportar Excel
@@ -286,7 +307,7 @@ export default function ListaEmpresas() {
                   <th className="px-4 py-3 text-left">Sit. RFB</th>
                   <th className="px-4 py-3 text-left">Afinidade</th>
                   <th className="px-4 py-3 text-left">Vencimento</th>
-                  <th className="px-4 py-3 text-left">Status</th>
+                  <th className="px-4 py-3 text-left">Status DRT</th>
                   <th className="px-4 py-3 text-right">Ações</th>
                 </tr>
               </thead>
@@ -294,17 +315,17 @@ export default function ListaEmpresas() {
                 {filtradas.map((e) => (
                   <tr key={e.id} className="hover:bg-gray-50 cursor-pointer" onDoubleClick={() => abrirVer(e)}>
                     <td className="px-4 py-3 font-mono text-xs text-gray-600">{formatarCNPJ(e.cnpj)}</td>
-                    <td className="px-4 py-3 font-medium text-gray-900 max-w-[200px]">
-                      <div className="truncate" title={e.razaoSocial}>{e.razaoSocial}</div>
+                    <td className="px-4 py-3 font-medium text-gray-900">
+                      <div>{e.razaoSocial}</div>
                     </td>
-                    <td className="px-4 py-3 text-gray-600 max-w-[160px]">
-                      {e.perfil && <div className="truncate text-xs font-medium text-gray-700" title={e.perfil}>{e.perfil}</div>}
-                      {e.cnae && <div className="truncate text-xs text-gray-400" title={e.ramoAtividade ?? e.cnae}>{e.cnae}{e.ramoAtividade ? ` — ${e.ramoAtividade}` : ""}</div>}
+                    <td className="px-4 py-3 text-gray-600">
+                      {e.perfil && <div className="text-xs font-medium text-gray-700">{e.perfil}</div>}
+                      {e.cnae && <div className="text-xs text-gray-400">{e.cnae}{e.ramoAtividade ? ` — ${e.ramoAtividade}` : ""}</div>}
                     </td>
-                    <td className="px-4 py-3 max-w-[180px]">
+                    <td className="px-4 py-3">
                       {e.sindicato ? (
                         <div>
-                          <div className="truncate text-xs text-gray-700" title={e.sindicato.nome}>{e.sindicato.nome}</div>
+                          <div className="text-xs text-gray-700">{e.sindicato.nome}</div>
                           <span className="text-[10px] text-gray-400 capitalize">{e.sindicato.tipo}</span>
                         </div>
                       ) : <span className="text-gray-400 text-xs">—</span>}

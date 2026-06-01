@@ -6,10 +6,21 @@ import Modal from "./Modal";
 type EmpresaLite = { id: number; razaoSocial: string; cnpj: string };
 type ConselhoEmpresa = { id: number; empresa: EmpresaLite };
 
+type SindicatoLite = { id: number; nome: string };
+type PresidenteLite = { id: number; nome: string; cargo: string | null; sindicato: SindicatoLite };
+
 type Conselho = {
   id: number;
   nome: string;
   tipo: string;
+  titular: string | null;
+  suplente: string | null;
+  titularId: number | null;
+  suplenteId: number | null;
+  titularRef: PresidenteLite | null;
+  suplenteRef: PresidenteLite | null;
+  telefone: string | null;
+  email: string | null;
   _count: { empresas: number };
   empresas: ConselhoEmpresa[];
 };
@@ -29,11 +40,12 @@ function badgeTipo(tipo: string) {
 export default function ListaConselhos() {
   const [conselhos, setConselhos] = useState<Conselho[]>([]);
   const [todasEmpresas, setTodasEmpresas] = useState<EmpresaAll[]>([]);
+  const [todosPresidentes, setTodosPresidentes] = useState<PresidenteLite[]>([]);
   const [filtro, setFiltro] = useState("");
   const [expandido, setExpandido] = useState<number | null>(null);
   const [modal, setModal] = useState<"novo" | "editar" | "excluir" | null>(null);
   const [selecionado, setSelecionado] = useState<Conselho | null>(null);
-  const [novoForm, setNovoForm] = useState({ nome: "", tipo: "conselho" });
+  const [novoForm, setNovoForm] = useState({ nome: "", tipo: "conselho", titular: "", suplente: "", titularId: "", suplenteId: "", telefone: "", email: "" });
   const [addEmpresaId, setAddEmpresaId] = useState<string>("");
   const [carregando, setCarregando] = useState(true);
   const [erro, setErro] = useState("");
@@ -41,15 +53,20 @@ export default function ListaConselhos() {
 
   const carregar = useCallback(async () => {
     setCarregando(true);
-    const [rc, re] = await Promise.all([fetch("/api/conselhos"), fetch("/api/empresas")]);
+    const [rc, re, rs] = await Promise.all([
+      fetch("/api/conselhos"),
+      fetch("/api/empresas"),
+      fetch("/api/presidentes"),
+    ]);
     setConselhos(await rc.json());
     setTodasEmpresas(await re.json());
+    setTodosPresidentes(await rs.json());
     setCarregando(false);
   }, []);
 
   useEffect(() => { carregar(); }, [carregar]);
 
-  function fecharModal() { setModal(null); setSelecionado(null); setNovoForm({ nome: "", tipo: "conselho" }); setErro(""); }
+  function fecharModal() { setModal(null); setSelecionado(null); setNovoForm({ nome: "", tipo: "conselho", titular: "", suplente: "", titularId: "", suplenteId: "", telefone: "", email: "" }); setErro(""); }
 
   async function salvarConselho(e: React.FormEvent) {
     e.preventDefault();
@@ -62,7 +79,11 @@ export default function ListaConselhos() {
     const res = await fetch(url, {
       method,
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(novoForm),
+      body: JSON.stringify({
+        ...novoForm,
+        titularId: novoForm.titularId ? Number(novoForm.titularId) : null,
+        suplenteId: novoForm.suplenteId ? Number(novoForm.suplenteId) : null,
+      }),
     });
 
     if (res.ok) {
@@ -163,7 +184,7 @@ export default function ListaConselhos() {
                   </div>
                   <div className="flex items-center gap-3">
                     <button
-                      onClick={(e) => { e.stopPropagation(); setSelecionado(c); setNovoForm({ nome: c.nome, tipo: c.tipo }); setModal("editar"); }}
+                      onClick={(e) => { e.stopPropagation(); setSelecionado(c); setNovoForm({ nome: c.nome, tipo: c.tipo, titular: c.titular ?? "", suplente: c.suplente ?? "", titularId: c.titularId ? String(c.titularId) : "", suplenteId: c.suplenteId ? String(c.suplenteId) : "", telefone: c.telefone ?? "", email: c.email ?? "" }); setModal("editar"); }}
                       className="text-blue-600 hover:underline text-xs"
                     >
                       Editar
@@ -180,6 +201,39 @@ export default function ListaConselhos() {
 
                 {aberto && (
                   <div className="border-t border-gray-100 px-4 py-4 space-y-3">
+                    {/* Dados de contato */}
+                    {(c.titularRef || c.suplenteRef || c.titular || c.suplente || c.telefone || c.email) && (
+                      <div className="grid grid-cols-2 gap-x-6 gap-y-1.5 text-xs text-gray-600 bg-gray-50 rounded-lg px-3 py-2">
+                        {(c.titularRef || c.titular) && (
+                          <div>
+                            <span className="font-medium text-gray-500">Titular:</span>{" "}
+                            {c.titularRef ? (
+                              <span>
+                                <span className="font-medium text-gray-800">{c.titularRef.nome}</span>
+                                {c.titularRef.cargo && <span className="text-gray-400"> ({c.titularRef.cargo})</span>}
+                                <br />
+                                <span className="text-gray-400 text-[10px]">{c.titularRef.sindicato.nome}</span>
+                              </span>
+                            ) : c.titular}
+                          </div>
+                        )}
+                        {(c.suplenteRef || c.suplente) && (
+                          <div>
+                            <span className="font-medium text-gray-500">Suplente:</span>{" "}
+                            {c.suplenteRef ? (
+                              <span>
+                                <span className="font-medium text-gray-800">{c.suplenteRef.nome}</span>
+                                {c.suplenteRef.cargo && <span className="text-gray-400"> ({c.suplenteRef.cargo})</span>}
+                                <br />
+                                <span className="text-gray-400 text-[10px]">{c.suplenteRef.sindicato.nome}</span>
+                              </span>
+                            ) : c.suplente}
+                          </div>
+                        )}
+                        {c.telefone && <div><span className="font-medium text-gray-500">Telefone:</span> {c.telefone}</div>}
+                        {c.email && <div><span className="font-medium text-gray-500">E-mail:</span> {c.email}</div>}
+                      </div>
+                    )}
                     {/* Adicionar empresa */}
                     <div className="flex gap-2">
                       <select
@@ -249,6 +303,70 @@ export default function ListaConselhos() {
                 <option value="conselho">Conselho</option>
                 <option value="comite">Comitê</option>
               </select>
+            </div>
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Titular</label>
+                <select
+                  value={novoForm.titularId}
+                  onChange={(e) => {
+                    const pres = todosPresidentes.find((p) => String(p.id) === e.target.value);
+                    setNovoForm((f) => ({ ...f, titularId: e.target.value, titular: pres?.nome ?? "" }));
+                  }}
+                  className={inp}
+                >
+                  <option value="">— Selecionar presidente —</option>
+                  {todosPresidentes.map((p) => (
+                    <option key={p.id} value={p.id}>
+                      {p.nome}{p.cargo ? ` (${p.cargo})` : ""} — {p.sindicato.nome.slice(0, 40)}
+                    </option>
+                  ))}
+                </select>
+                {!novoForm.titularId && (
+                  <input
+                    value={novoForm.titular}
+                    onChange={(e) => setNovoForm((f) => ({ ...f, titular: e.target.value }))}
+                    placeholder="Ou digitar nome manualmente"
+                    className={`mt-1 ${inp}`}
+                  />
+                )}
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Suplente</label>
+                <select
+                  value={novoForm.suplenteId}
+                  onChange={(e) => {
+                    const pres = todosPresidentes.find((p) => String(p.id) === e.target.value);
+                    setNovoForm((f) => ({ ...f, suplenteId: e.target.value, suplente: pres?.nome ?? "" }));
+                  }}
+                  className={inp}
+                >
+                  <option value="">— Selecionar presidente —</option>
+                  {todosPresidentes.map((p) => (
+                    <option key={p.id} value={p.id}>
+                      {p.nome}{p.cargo ? ` (${p.cargo})` : ""} — {p.sindicato.nome.slice(0, 40)}
+                    </option>
+                  ))}
+                </select>
+                {!novoForm.suplenteId && (
+                  <input
+                    value={novoForm.suplente}
+                    onChange={(e) => setNovoForm((f) => ({ ...f, suplente: e.target.value }))}
+                    placeholder="Ou digitar nome manualmente"
+                    className={`mt-1 ${inp}`}
+                  />
+                )}
+              </div>
+            </div>
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Telefone</label>
+                <input value={novoForm.telefone} onChange={(e) => setNovoForm((f) => ({ ...f, telefone: e.target.value }))} placeholder="(92) 99999-9999" className={inp} />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">E-mail</label>
+                <input type="email" value={novoForm.email} onChange={(e) => setNovoForm((f) => ({ ...f, email: e.target.value }))} placeholder="contato@exemplo.com" className={inp} />
+              </div>
             </div>
             <div className="flex justify-end gap-3 pt-2">
               <button type="button" onClick={fecharModal} className="rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50">Cancelar</button>

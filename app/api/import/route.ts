@@ -1,5 +1,6 @@
 import { NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { getUsuarioFromRequest, podeAlterar } from "@/lib/auth";
 
 function parseCSVLine(line: string): string[] {
   const result: string[] = [];
@@ -42,6 +43,14 @@ type LinhaErro = {
 };
 
 export async function POST(request: NextRequest) {
+  const usuario = await getUsuarioFromRequest(request);
+  if (!usuario) {
+    return Response.json({ error: "Não autenticado" }, { status: 401 });
+  }
+  if (!podeAlterar(usuario.perfil)) {
+    return Response.json({ error: "Acesso negado" }, { status: 403 });
+  }
+
   const formData = await request.formData();
   const file = formData.get("file") as File | null;
 
@@ -49,7 +58,11 @@ export async function POST(request: NextRequest) {
     return Response.json({ error: "Arquivo não enviado" }, { status: 400 });
   }
 
-  const text = await file.text();
+  const buffer = await file.arrayBuffer();
+  const bytes = new Uint8Array(buffer);
+  // Detecta UTF-8 BOM (EF BB BF); caso contrário assume Windows-1252 (padrão Excel/Brasil)
+  const hasUtf8Bom = bytes[0] === 0xEF && bytes[1] === 0xBB && bytes[2] === 0xBF;
+  const text = new TextDecoder(hasUtf8Bom ? "utf-8" : "windows-1252").decode(buffer);
   const lines = text.split(/\r?\n/).filter((l) => l.trim());
 
   if (lines.length < 2) {

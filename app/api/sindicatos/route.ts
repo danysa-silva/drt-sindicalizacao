@@ -1,5 +1,6 @@
 import { NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { getUsuarioFromRequest, podeAlterar } from "@/lib/auth";
 
 export async function GET() {
   const sindicatos = await prisma.sindicato.findMany({
@@ -13,8 +14,16 @@ export async function GET() {
 }
 
 export async function POST(request: NextRequest) {
+  const usuario = await getUsuarioFromRequest(request);
+  if (!usuario) {
+    return Response.json({ error: "Não autenticado" }, { status: 401 });
+  }
+  if (!podeAlterar(usuario.perfil)) {
+    return Response.json({ error: "Acesso negado" }, { status: 403 });
+  }
+
   const body = await request.json();
-  const { nome, tipo, cnpj, afinidadeFieam, observacoes } = body;
+  const { nome, tipo, cnpj, afinidadeFieam, validadeMandato, observacoes } = body;
 
   if (!nome) {
     return Response.json({ error: "Nome do sindicato é obrigatório" }, { status: 400 });
@@ -31,6 +40,7 @@ export async function POST(request: NextRequest) {
       tipo: tipo ?? "patronal",
       cnpj: cnpj ? cnpj.replace(/\D/g, "") : null,
       afinidadeFieam: afinidadeFieam ?? null,
+      validadeMandato: validadeMandato ?? null,
       observacoes: observacoes ?? null,
     },
   });

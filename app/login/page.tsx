@@ -1,11 +1,9 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
 import Link from "next/link";
 
 export default function LoginPage() {
-  const router = useRouter();
   const [form, setForm] = useState({ email: "", senha: "" });
   const [erro, setErro] = useState("");
   const [carregando, setCarregando] = useState(false);
@@ -22,8 +20,7 @@ export default function LoginPage() {
     });
 
     if (res.ok) {
-      router.push("/");
-      router.refresh();
+      window.location.href = "/";
     } else {
       const data = await res.json();
       setErro(data.error ?? "Erro ao entrar");

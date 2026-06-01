@@ -4,18 +4,19 @@ generator client {
 }
 
 datasource db {
-  provider = "postgresql"
+  provider = "sqlite"
 }
 
 model Sindicato {
-  id             Int       @id @default(autoincrement())
-  nome           String    @unique
-  tipo           String    @default("patronal")
-  cnpj           String?
-  afinidadeFieam String?
-  observacoes    String?
-  createdAt      DateTime  @default(now())
-  updatedAt      DateTime  @updatedAt
+  id               Int       @id @default(autoincrement())
+  nome             String    @unique
+  tipo             String    @default("patronal")
+  cnpj             String?
+  afinidadeFieam   String?
+  validadeMandato  String?
+  observacoes      String?
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
 
   empresas    Empresa[]
   presidentes PresidenteSindicato[]
@@ -33,7 +34,9 @@ model PresidenteSindicato {
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
 
-  sindicato Sindicato @relation(fields: [sindicatoId], references: [id], onDelete: Cascade)
+  sindicato    Sindicato  @relation(fields: [sindicatoId], references: [id], onDelete: Cascade)
+  comoTitular  Conselho[] @relation("ConselhoTitular")
+  comoSuplente Conselho[] @relation("ConselhoSuplente")
 }
 
 model Empresa {
@@ -59,13 +62,21 @@ model Empresa {
 }
 
 model Conselho {
-  id        Int       @id @default(autoincrement())
-  nome      String    @unique
-  tipo      String    @default("conselho")
-  createdAt DateTime  @default(now())
-  updatedAt DateTime  @updatedAt
+  id          Int       @id @default(autoincrement())
+  nome        String    @unique
+  tipo        String    @default("conselho")
+  titular     String?
+  suplente    String?
+  titularId   Int?
+  suplenteId  Int?
+  telefone    String?
+  email       String?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
 
-  empresas ConselhoEmpresa[]
+  empresas     ConselhoEmpresa[]
+  titularRef   PresidenteSindicato? @relation("ConselhoTitular",  fields: [titularId],  references: [id], onDelete: SetNull)
+  suplenteRef  PresidenteSindicato? @relation("ConselhoSuplente", fields: [suplenteId], references: [id], onDelete: SetNull)
 }
 
 model ConselhoEmpresa {

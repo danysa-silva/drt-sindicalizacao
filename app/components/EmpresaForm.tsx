@@ -177,7 +177,7 @@ export default function EmpresaForm({ inicial, onSalvar, onCancelar }: Props) {
           <input name="cnpj" value={form.cnpj} onChange={handleChange} placeholder="00.000.000/0000-00" required className={inp} />
         </div>
         <div>
-          <label className={lbl}>Status *</label>
+          <label className={lbl}>Status no DRT *</label>
           <select name="status" value={form.status} onChange={handleChange} required className={inp}>
             <option value="ativo">Ativo</option>
             <option value="inativo">Inativo</option>

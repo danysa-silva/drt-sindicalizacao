@@ -1,6 +1,6 @@
 import { NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { getUsuarioFromRequest } from "@/lib/auth";
+import { getUsuarioFromRequest, podeAlterar } from "@/lib/auth";
 import { registrarAuditoria, registrarEdicao } from "@/lib/auditoria";
 
 type Params = { params: Promise<{ id: string }> };
@@ -17,7 +17,10 @@ export async function GET(_request: NextRequest, { params }: Params) {
 
 export async function PUT(request: NextRequest, { params }: Params) {
   const usuario = await getUsuarioFromRequest(request);
-  if (!usuario || usuario.perfil !== "admin") {
+  if (!usuario) {
+    return Response.json({ error: "Não autenticado" }, { status: 401 });
+  }
+  if (!podeAlterar(usuario.perfil)) {
     return Response.json({ error: "Acesso negado" }, { status: 403 });
   }
 
@@ -73,7 +76,10 @@ export async function PUT(request: NextRequest, { params }: Params) {
 
 export async function DELETE(request: NextRequest, { params }: Params) {
   const usuario = await getUsuarioFromRequest(request);
-  if (!usuario || usuario.perfil !== "admin") {
+  if (!usuario) {
+    return Response.json({ error: "Não autenticado" }, { status: 401 });
+  }
+  if (!podeAlterar(usuario.perfil)) {
     return Response.json({ error: "Acesso negado" }, { status: 403 });
   }
 

@@ -3,8 +3,20 @@ import bcrypt from "bcryptjs";
 import { prisma } from "@/lib/prisma";
 import { signToken } from "@/lib/auth";
 
-const DOMINIO_PERMITIDO = "@fieam.org.br";
 const ADMINS_INICIAIS = ["danielle.sa@fieam.org.br"];
+
+const DOMINIOS_PERMITIDOS = [
+  "@fieam.org.br",
+  "@sesi.org.br",
+  "@senai.org.br",
+  "@sesi-am.org.br",
+  "@senai-am.org.br",
+];
+
+function dominioPermitido(email: string): boolean {
+  const e = email.toLowerCase();
+  return DOMINIOS_PERMITIDOS.some((d) => e.endsWith(d));
+}
 
 export async function POST(request: NextRequest) {
   const { email, nome, senha } = await request.json();
@@ -13,9 +25,9 @@ export async function POST(request: NextRequest) {
     return Response.json({ error: "Todos os campos são obrigatórios" }, { status: 400 });
   }
 
-  if (!email.toLowerCase().endsWith(DOMINIO_PERMITIDO)) {
+  if (!dominioPermitido(email)) {
     return Response.json(
-      { error: `Somente e-mails ${DOMINIO_PERMITIDO} são permitidos` },
+      { error: "Somente e-mails @fieam.org.br, @sesi.org.br ou @senai.org.br são aceitos" },
       { status: 403 }
     );
   }
