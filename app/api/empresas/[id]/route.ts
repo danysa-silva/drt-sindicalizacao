@@ -1,9 +1,37 @@
 import { NextRequest } from "next/server";
+import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { getUsuarioFromRequest, podeAlterar } from "@/lib/auth";
 import { registrarAuditoria, registrarEdicao } from "@/lib/auditoria";
 
 type Params = { params: Promise<{ id: string }> };
+
+const empresaSchema = z.object({
+  cnpj: z
+    .string({ error: "CNPJ é obrigatório" })
+    .transform((v) => v.replace(/\D/g, ""))
+    .refine((v) => v.length === 14, { message: "CNPJ deve ter 14 dígitos" }),
+  razaoSocial: z
+    .string({ error: "Razão social é obrigatória" })
+    .min(1, { message: "Razão social não pode ser vazia" }),
+  sindicatoId: z.coerce
+    .number({ error: "sindicatoId deve ser um número válido" })
+    .int()
+    .positive({ message: "sindicatoId deve ser um número válido" }),
+  dataSindicalizacao: z
+    .string({ error: "Data de sindicalização é obrigatória" })
+    .refine((v) => !isNaN(new Date(v).getTime()), { message: "Data de sindicalização inválida" }),
+  dataVencimento: z
+    .string({ error: "Data de vencimento é obrigatória" })
+    .refine((v) => !isNaN(new Date(v).getTime()), { message: "Data de vencimento inválida" }),
+  cnae: z.string().nullish(),
+  ramoAtividade: z.string().nullish(),
+  perfil: z.string().nullish(),
+  situacaoRFB: z.string().nullish(),
+  afinidade: z.string().nullish(),
+  status: z.string().optional().default("ativo"),
+  observacoes: z.string().nullish(),
+});
 
 export async function GET(_request: NextRequest, { params }: Params) {
   const { id } = await params;
@@ -26,17 +54,22 @@ export async function PUT(request: NextRequest, { params }: Params) {
 
   const { id } = await params;
   const body = await request.json();
+  const resultado = empresaSchema.safeParse(body);
+  if (!resultado.success) {
+    const mensagem = resultado.error.issues[0]?.message ?? "Dados inválidos";
+    return Response.json({ error: mensagem }, { status: 400 });
+  }
+
   const {
     cnpj, razaoSocial, sindicatoId, cnae, ramoAtividade, perfil,
     situacaoRFB, afinidade, dataSindicalizacao, dataVencimento, status, observacoes,
-  } = body;
+  } = resultado.data;
 
   const antes = await prisma.empresa.findUnique({ where: { id: Number(id) } });
   if (!antes) return Response.json({ error: "Empresa não encontrada" }, { status: 404 });
 
-  const cnpjLimpo = cnpj?.replace(/\D/g, "");
   const existing = await prisma.empresa.findFirst({
-    where: { cnpj: cnpjLimpo, NOT: { id: Number(id) } },
+    where: { cnpj, NOT: { id: Number(id) } },
   });
   if (existing) {
     return Response.json({ error: "CNPJ já cadastrado em outra empresa" }, { status: 409 });
@@ -45,14 +78,18 @@ export async function PUT(request: NextRequest, { params }: Params) {
   const empresa = await prisma.empresa.update({
     where: { id: Number(id) },
     data: {
-      cnpj: cnpjLimpo, razaoSocial,
-      cnae: cnae ?? null, ramoAtividade: ramoAtividade ?? null,
-      perfil: perfil ?? null, situacaoRFB: situacaoRFB ?? null,
+      cnpj,
+      razaoSocial,
+      cnae: cnae ?? null,
+      ramoAtividade: ramoAtividade ?? null,
+      perfil: perfil ?? null,
+      situacaoRFB: situacaoRFB ?? null,
       afinidade: afinidade ?? null,
-      sindicatoId: sindicatoId ? Number(sindicatoId) : null,
+      sindicatoId,
       dataSindicalizacao: new Date(dataSindicalizacao),
       dataVencimento: new Date(dataVencimento),
-      status, observacoes: observacoes ?? null,
+      status,
+      observacoes: observacoes ?? null,
     },
     include: { sindicato: true },
   });
@@ -68,7 +105,7 @@ export async function PUT(request: NextRequest, { params }: Params) {
       dataVencimento: antes.dataVencimento.toISOString().split("T")[0],
       status: antes.status, observacoes: antes.observacoes,
     },
-    { cnpj: cnpjLimpo, razaoSocial, cnae, ramoAtividade, perfil, situacaoRFB, afinidade, sindicatoId, dataSindicalizacao, dataVencimento, status, observacoes }
+    { cnpj, razaoSocial, cnae, ramoAtividade, perfil, situacaoRFB, afinidade, sindicatoId, dataSindicalizacao, dataVencimento, status, observacoes }
   );
 
   return Response.json(empresa);
