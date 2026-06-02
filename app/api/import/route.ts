@@ -2,6 +2,8 @@ import { NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getUsuarioFromRequest, podeAlterar } from "@/lib/auth";
 
+const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5 MB
+
 function parseCSVLine(line: string): string[] {
   const result: string[] = [];
   let current = "";
@@ -58,6 +60,14 @@ export async function POST(request: NextRequest) {
     return Response.json({ error: "Arquivo não enviado" }, { status: 400 });
   }
 
+  if (!file.name.toLowerCase().endsWith(".csv")) {
+    return Response.json({ error: "O arquivo deve ter extensão .csv" }, { status: 400 });
+  }
+
+  if (file.size > MAX_FILE_SIZE) {
+    return Response.json({ error: "O arquivo não pode ultrapassar 5 MB" }, { status: 400 });
+  }
+
   const buffer = await file.arrayBuffer();
   const bytes = new Uint8Array(buffer);
   // Detecta UTF-8 BOM (EF BB BF); caso contrário assume Windows-1252 (padrão Excel/Brasil)
@@ -90,13 +100,29 @@ export async function POST(request: NextRequest) {
     const cnpjLimpo = cnpjRaw.replace(/\D/g, "");
     const razaoSocial = col(row, "razao_social") || col(row, "empresa");
 
-    if (!cnpjLimpo || cnpjLimpo.length < 11) {
-      linhasComErro.push({ linha: i + 1, cnpj: cnpjRaw || "(vazio)", razaoSocial, motivo: "CNPJ inválido ou ausente" });
+    if (!cnpjLimpo || cnpjLimpo.length !== 14) {
+      linhasComErro.push({ linha: i + 1, cnpj: cnpjRaw || "(vazio)", razaoSocial, motivo: "CNPJ inválido ou ausente (deve ter 14 dígitos)" });
       continue;
     }
 
     if (!razaoSocial) {
       linhasComErro.push({ linha: i + 1, cnpj: cnpjRaw, razaoSocial: "(vazio)", motivo: "Razão social ausente" });
+      continue;
+    }
+
+    const rawDataSind = col(row, "data_sindicalizacao") || col(row, "data");
+    const rawDataVenc = col(row, "data_vencimento") || col(row, "vencimento");
+
+    const dataSind = rawDataSind ? normalizeDate(rawDataSind) : null;
+    const dataVenc = rawDataVenc ? normalizeDate(rawDataVenc) : null;
+
+    if (rawDataSind && dataSind === null) {
+      linhasComErro.push({ linha: i + 1, cnpj: cnpjRaw, razaoSocial, motivo: "Data de sindicalização inválida" });
+      continue;
+    }
+
+    if (rawDataVenc && dataVenc === null) {
+      linhasComErro.push({ linha: i + 1, cnpj: cnpjRaw, razaoSocial, motivo: "Data de vencimento inválida" });
       continue;
     }
 
@@ -111,9 +137,6 @@ export async function POST(request: NextRequest) {
         }
         sindicatoId = sindicato.id;
       }
-
-      const dataSind = normalizeDate(col(row, "data_sindicalizacao") || col(row, "data"));
-      const dataVenc = normalizeDate(col(row, "data_vencimento") || col(row, "vencimento"));
 
       const data = {
         razaoSocial,
