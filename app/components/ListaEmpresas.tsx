@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback, useRef } from "react";
-import * as XLSX from "xlsx";
+
 import Modal from "./Modal";
 import EmpresaForm from "./EmpresaForm";
 import { useUsuario } from "./UserContext";
@@ -116,27 +116,46 @@ export default function ListaEmpresas() {
 
   function fecharModal() { setModal(null); setSelecionada(null); setResultadoImport(null); }
 
-  function exportarExcel() {
-    const dados = filtradas.map((e) => ({
-      "CNPJ": formatarCNPJ(e.cnpj),
-      "Razão Social": e.razaoSocial,
-      "Perfil": e.perfil ?? "",
-      "CNAE": e.cnae ?? "",
-      "Ramo de Atividade": e.ramoAtividade ?? "",
-      "Situação RFB": e.situacaoRFB ?? "",
-      "Afinidade": e.afinidade ?? "",
-      "Sindicato": e.sindicato?.nome ?? "",
-      "Tipo Sindicato": e.sindicato?.tipo ?? "",
-      "Data Sindicalização": formatarData(e.dataSindicalizacao),
-      "Data Vencimento": formatarData(e.dataVencimento),
-      "Status DRT": e.status,
-      "Observações": e.observacoes ?? "",
-    }));
+  function exportarCSV() {
+    const cabecalhos = [
+      "CNPJ", "Razão Social", "Perfil", "CNAE", "Ramo de Atividade",
+      "Situação RFB", "Afinidade", "Sindicato", "Tipo Sindicato",
+      "Data Sindicalização", "Data Vencimento", "Status DRT", "Observações",
+    ];
 
-    const ws = XLSX.utils.json_to_sheet(dados);
-    const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, "Empresas");
-    XLSX.writeFile(wb, `empresas_sindicalizadas_${new Date().toISOString().slice(0, 10)}.xlsx`);
+    function escaparCampo(valor: string): string {
+      if (valor.includes(";") || valor.includes('"') || valor.includes("\n")) {
+        return `"${valor.replace(/"/g, '""')}"`;
+      }
+      return valor;
+    }
+
+    const linhas = filtradas.map((e) =>
+      [
+        formatarCNPJ(e.cnpj),
+        e.razaoSocial,
+        e.perfil ?? "",
+        e.cnae ?? "",
+        e.ramoAtividade ?? "",
+        e.situacaoRFB ?? "",
+        e.afinidade ?? "",
+        e.sindicato?.nome ?? "",
+        e.sindicato?.tipo ?? "",
+        formatarData(e.dataSindicalizacao),
+        formatarData(e.dataVencimento),
+        e.status,
+        e.observacoes ?? "",
+      ].map(escaparCampo).join(";")
+    );
+
+    const csv = "﻿" + [cabecalhos.map(escaparCampo).join(";"), ...linhas].join("\n");
+    const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `empresas_sindicalizadas_${new Date().toISOString().slice(0, 10)}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
   }
 
   async function handleImport(e: React.FormEvent) {
@@ -258,10 +277,10 @@ export default function ListaEmpresas() {
             </button>
           )}
           <button
-            onClick={exportarExcel}
+            onClick={exportarCSV}
             className="inline-flex items-center gap-1 rounded-lg border border-green-600 bg-green-50 px-3 py-2 text-sm font-medium text-green-700 hover:bg-green-100 transition"
           >
-            ⬇ Exportar Excel
+            ⬇ Exportar CSV
           </button>
           {isAdmin && (
             <button
