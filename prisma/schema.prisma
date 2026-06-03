@@ -18,8 +18,9 @@ model Sindicato {
   createdAt        DateTime  @default(now())
   updatedAt        DateTime  @updatedAt
 
-  empresas    Empresa[]
-  presidentes PresidenteSindicato[]
+  empresas       Empresa[]
+  presidentes    PresidenteSindicato[]
+  representantes RepresentanteSindicato[]
 }
 
 model PresidenteSindicato {
@@ -74,9 +75,10 @@ model Conselho {
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
 
-  empresas     ConselhoEmpresa[]
-  titularRef   PresidenteSindicato? @relation("ConselhoTitular",  fields: [titularId],  references: [id], onDelete: SetNull)
-  suplenteRef  PresidenteSindicato? @relation("ConselhoSuplente", fields: [suplenteId], references: [id], onDelete: SetNull)
+  empresas       ConselhoEmpresa[]
+  titularRef     PresidenteSindicato?   @relation("ConselhoTitular",  fields: [titularId],  references: [id], onDelete: SetNull)
+  suplenteRef    PresidenteSindicato?   @relation("ConselhoSuplente", fields: [suplenteId], references: [id], onDelete: SetNull)
+  representantes RepresentanteConselho[]
 }
 
 model ConselhoEmpresa {
@@ -119,4 +121,46 @@ model HistoricoAlteracao {
 
   empresa Empresa? @relation(fields: [empresaId], references: [id], onDelete: SetNull)
   usuario Usuario? @relation(fields: [usuarioId], references: [id], onDelete: SetNull)
+}
+
+model Representante {
+  id          Int       @id @default(autoincrement())
+  nome        String
+  cpf         String?   @unique
+  email       String?
+  telefone    String?
+  observacoes String?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  sindicatos RepresentanteSindicato[]
+  conselhos  RepresentanteConselho[]
+}
+
+model RepresentanteSindicato {
+  id              Int       @id @default(autoincrement())
+  representanteId Int
+  sindicatoId     Int
+  papel           String
+  dataInicio      DateTime?
+  dataFim         DateTime?
+  createdAt       DateTime  @default(now())
+
+  representante Representante @relation(fields: [representanteId], references: [id], onDelete: Cascade)
+  sindicato     Sindicato     @relation(fields: [sindicatoId],     references: [id], onDelete: Cascade)
+
+  @@unique([representanteId, sindicatoId, papel, dataInicio])
+}
+
+model RepresentanteConselho {
+  id              Int      @id @default(autoincrement())
+  representanteId Int
+  conselhoId      Int
+  papel           String
+  createdAt       DateTime @default(now())
+
+  representante Representante @relation(fields: [representanteId], references: [id], onDelete: Cascade)
+  conselho      Conselho      @relation(fields: [conselhoId],      references: [id], onDelete: Cascade)
+
+  @@unique([representanteId, conselhoId, papel])
 }
