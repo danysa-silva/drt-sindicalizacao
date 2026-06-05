@@ -20,7 +20,7 @@ export async function GET(request: NextRequest) {
 
   // --- 1. Vínculos estruturados via PresidenteSindicato (com FK) ---
   const presidentes = await prisma.presidenteSindicato.findMany({
-    where: { nome: { contains: busca } },
+    where: { nome: { contains: busca, mode: "insensitive" } },
     include: {
       sindicato: {
         include: {
@@ -51,7 +51,7 @@ export async function GET(request: NextRequest) {
   // --- 2. Vínculos de texto livre nos Conselhos (sem FK vinculada) ---
   const [conselhosTitularTexto, conselhosSuplementeTexto] = await Promise.all([
     prisma.conselho.findMany({
-      where: { titular: { contains: busca }, titularId: null },
+      where: { titular: { contains: busca, mode: "insensitive" }, titularId: null },
       include: {
         empresas: {
           include: {
@@ -61,7 +61,7 @@ export async function GET(request: NextRequest) {
       },
     }),
     prisma.conselho.findMany({
-      where: { suplente: { contains: busca }, suplenteId: null },
+      where: { suplente: { contains: busca, mode: "insensitive" }, suplenteId: null },
       include: {
         empresas: {
           include: {

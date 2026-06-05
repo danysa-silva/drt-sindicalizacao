@@ -9,7 +9,7 @@ const LINKS = [
   { href: "/sindicatos", label: "Sindicatos" },
   { href: "/conselhos", label: "Conselhos e Comitês" },
   { href: "/vinculos", label: "Vínculos" },
-  { href: "/alteracoes", label: "Alterações" },
+  { href: "/alteracoes", label: "Log de segurança" },
 ];
 
 export default function NavBar() {
