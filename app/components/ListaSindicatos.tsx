@@ -154,8 +154,8 @@ export default function ListaSindicatos() {
                   <th className="px-4 py-3 text-left">Tipo</th>
                   <th className="px-4 py-3 text-left">CNPJ</th>
                   <th className="px-4 py-3 text-left">Validade Mandato</th>
-                  <th className="px-4 py-3 text-left">Empresas</th>
                   <th className="px-4 py-3 text-left">Presidente</th>
+                  <th className="px-4 py-3 text-left">Empresas</th>
                   <th className="px-4 py-3 text-right">Ações</th>
                 </tr>
               </thead>
@@ -176,6 +176,14 @@ export default function ListaSindicatos() {
                     <td className="px-4 py-3 text-xs text-gray-600">
                       {s.validadeMandato || <span className="text-gray-400">—</span>}
                     </td>
+                    <td className="px-4 py-3 text-xs text-gray-600 max-w-[160px]">
+                      {s.presidentes[0] ? (
+                        <div>
+                          <div className="font-medium truncate" title={s.presidentes[0].nome}>{s.presidentes[0].nome}</div>
+                          {s.presidentes[0].cargo && <div className="text-gray-400 truncate">{s.presidentes[0].cargo}</div>}
+                        </div>
+                      ) : <span className="text-gray-400">—</span>}
+                    </td>
                     <td className="px-4 py-3 text-center text-sm text-gray-600 font-medium">
                       {s._count.empresas > 0 ? (
                         <button
@@ -187,14 +195,6 @@ export default function ListaSindicatos() {
                       ) : (
                         <span className="text-gray-400">0</span>
                       )}
-                    </td>
-                    <td className="px-4 py-3 text-xs text-gray-600 max-w-[160px]">
-                      {s.presidentes[0] ? (
-                        <div>
-                          <div className="font-medium truncate" title={s.presidentes[0].nome}>{s.presidentes[0].nome}</div>
-                          {s.presidentes[0].cargo && <div className="text-gray-400 truncate">{s.presidentes[0].cargo}</div>}
-                        </div>
-                      ) : <span className="text-gray-400">—</span>}
                     </td>
                     <td className="px-4 py-3 text-right whitespace-nowrap">
                       <button
