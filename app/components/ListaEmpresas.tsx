@@ -75,7 +75,7 @@ function Row({ label, valor, classe }: { label: string; valor?: string | null; c
 
 export default function ListaEmpresas() {
   const usuario = useUsuario();
-  const isAdmin = usuario?.perfil === "admin";
+  const isAdmin = usuario?.perfil === "admin" || usuario?.perfil === "editor";
   const [empresas, setEmpresas] = useState<Empresa[]>([]);
   const [filtro, setFiltro] = useState("");
   const [filtroStatus, setFiltroStatus] = useState("todos");

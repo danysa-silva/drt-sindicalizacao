@@ -5,6 +5,7 @@ import Modal from "./Modal";
 import SindicatoForm from "./SindicatoForm";
 import PresidentesModal from "./PresidentesModal";
 import EmpresasSindicatoModal from "./EmpresasSindicatoModal";
+import { useUsuario } from "./UserContext";
 
 type Presidente = {
   id: number;
@@ -45,6 +46,8 @@ function badgeTipo(tipo: string) {
 }
 
 export default function ListaSindicatos() {
+  const usuario = useUsuario();
+  const podeEditar = usuario?.perfil === "admin" || usuario?.perfil === "editor";
   const [sindicatos, setSindicatos] = useState<Sindicato[]>([]);
   const [filtro, setFiltro] = useState("");
   const [filtroTipo, setFiltroTipo] = useState("todos");
@@ -111,12 +114,14 @@ export default function ListaSindicatos() {
             <option value="laboral">Laboral</option>
           </select>
         </div>
-        <button
-          onClick={() => setModal("novo")}
-          className="inline-flex items-center gap-1 rounded-lg bg-blue-700 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-800 transition"
-        >
-          + Novo Sindicato
-        </button>
+        {podeEditar && (
+          <button
+            onClick={() => setModal("novo")}
+            className="inline-flex items-center gap-1 rounded-lg bg-blue-700 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-800 transition"
+          >
+            + Novo Sindicato
+          </button>
+        )}
       </div>
 
       {/* Resumo */}
@@ -212,18 +217,22 @@ export default function ListaSindicatos() {
                       >
                         Presidentes
                       </button>
-                      <button
-                        onClick={() => { setSelecionado(s); setModal("editar"); }}
-                        className="mr-2 text-blue-600 hover:underline text-xs"
-                      >
-                        Editar
-                      </button>
-                      <button
-                        onClick={() => { setSelecionado(s); setModal("excluir"); }}
-                        className="text-red-500 hover:underline text-xs"
-                      >
-                        Excluir
-                      </button>
+                      {podeEditar && (
+                        <>
+                          <button
+                            onClick={() => { setSelecionado(s); setModal("editar"); }}
+                            className="mr-2 text-blue-600 hover:underline text-xs"
+                          >
+                            Editar
+                          </button>
+                          <button
+                            onClick={() => { setSelecionado(s); setModal("excluir"); }}
+                            className="text-red-500 hover:underline text-xs"
+                          >
+                            Excluir
+                          </button>
+                        </>
+                      )}
                     </td>
                   </tr>
                 ))}

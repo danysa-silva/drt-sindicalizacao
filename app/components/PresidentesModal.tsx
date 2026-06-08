@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
+import { useUsuario } from "./UserContext";
 
 type Presidente = {
   id: number;
@@ -17,6 +18,8 @@ type Props = { sindicatoId: number; onFechar: () => void };
 const VAZIO = { nome: "", cargo: "", email: "", telefone: "", dataInicio: "", dataFim: "" };
 
 export default function PresidentesModal({ sindicatoId, onFechar }: Props) {
+  const usuario = useUsuario();
+  const podeEditar = usuario?.perfil === "admin" || usuario?.perfil === "editor";
   const [presidentes, setPresidentes] = useState<Presidente[]>([]);
   const [form, setForm] = useState(VAZIO);
   const [editandoId, setEditandoId] = useState<number | null>(null);
@@ -91,10 +94,12 @@ export default function PresidentesModal({ sindicatoId, onFechar }: Props) {
                   {p.telefone && <span>{p.telefone}</span>}
                 </div>
               </div>
-              <div className="flex gap-2 ml-4 shrink-0">
-                <button onClick={() => editarPresidente(p)} className="text-blue-600 hover:underline text-xs">Editar</button>
-                <button onClick={() => excluir(p.id)} className="text-red-500 hover:underline text-xs">Excluir</button>
-              </div>
+              {podeEditar && (
+                <div className="flex gap-2 ml-4 shrink-0">
+                  <button onClick={() => editarPresidente(p)} className="text-blue-600 hover:underline text-xs">Editar</button>
+                  <button onClick={() => excluir(p.id)} className="text-red-500 hover:underline text-xs">Excluir</button>
+                </div>
+              )}
             </div>
           ))}
         </div>
@@ -102,8 +107,8 @@ export default function PresidentesModal({ sindicatoId, onFechar }: Props) {
         <p className="text-sm text-gray-400">Nenhum presidente cadastrado.</p>
       )}
 
-      {/* Formulário */}
-      <div className="rounded-lg border border-gray-200 bg-gray-50 p-4">
+      {/* Formulário — apenas para admin e editor */}
+      {podeEditar && <div className="rounded-lg border border-gray-200 bg-gray-50 p-4">
         <h3 className="text-sm font-semibold text-gray-700 mb-3">
           {editandoId ? "Editar Presidente" : "Adicionar Presidente"}
         </h3>
@@ -150,7 +155,7 @@ export default function PresidentesModal({ sindicatoId, onFechar }: Props) {
             </button>
           </div>
         </form>
-      </div>
+      </div>}
 
       <div className="flex justify-end">
         <button onClick={onFechar} className="rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50">Fechar</button>

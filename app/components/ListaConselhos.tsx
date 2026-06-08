@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from "react";
 import Modal from "./Modal";
+import { useUsuario } from "./UserContext";
 
 type EmpresaLite = { id: number; razaoSocial: string; cnpj: string };
 type ConselhoEmpresa = { id: number; empresa: EmpresaLite };
@@ -38,6 +39,8 @@ function badgeTipo(tipo: string) {
 }
 
 export default function ListaConselhos() {
+  const usuario = useUsuario();
+  const podeEditar = usuario?.perfil === "admin" || usuario?.perfil === "editor";
   const [conselhos, setConselhos] = useState<Conselho[]>([]);
   const [todasEmpresas, setTodasEmpresas] = useState<EmpresaAll[]>([]);
   const [todosPresidentes, setTodosPresidentes] = useState<PresidenteLite[]>([]);
@@ -135,12 +138,14 @@ export default function ListaConselhos() {
           placeholder="Buscar conselho ou comitê..."
           className="flex-1 rounded-lg border border-gray-300 px-4 py-2 text-sm shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
         />
-        <button
-          onClick={() => setModal("novo")}
-          className="inline-flex items-center gap-1 rounded-lg bg-blue-700 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-800 transition"
-        >
-          + Novo Conselho / Comitê
-        </button>
+        {podeEditar && (
+          <button
+            onClick={() => setModal("novo")}
+            className="inline-flex items-center gap-1 rounded-lg bg-blue-700 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-800 transition"
+          >
+            + Novo Conselho / Comitê
+          </button>
+        )}
       </div>
 
       {/* Resumo */}
@@ -183,18 +188,22 @@ export default function ListaConselhos() {
                     <span className="text-xs text-gray-400">{c._count.empresas} empresa{c._count.empresas !== 1 ? "s" : ""}</span>
                   </div>
                   <div className="flex items-center gap-3">
-                    <button
-                      onClick={(e) => { e.stopPropagation(); setSelecionado(c); setNovoForm({ nome: c.nome, tipo: c.tipo, titular: c.titular ?? "", suplente: c.suplente ?? "", titularId: c.titularId ? String(c.titularId) : "", suplenteId: c.suplenteId ? String(c.suplenteId) : "", telefone: c.telefone ?? "", email: c.email ?? "" }); setModal("editar"); }}
-                      className="text-blue-600 hover:underline text-xs"
-                    >
-                      Editar
-                    </button>
-                    <button
-                      onClick={(e) => { e.stopPropagation(); setSelecionado(c); setModal("excluir"); }}
-                      className="text-red-500 hover:underline text-xs"
-                    >
-                      Excluir
-                    </button>
+                    {podeEditar && (
+                      <>
+                        <button
+                          onClick={(e) => { e.stopPropagation(); setSelecionado(c); setNovoForm({ nome: c.nome, tipo: c.tipo, titular: c.titular ?? "", suplente: c.suplente ?? "", titularId: c.titularId ? String(c.titularId) : "", suplenteId: c.suplenteId ? String(c.suplenteId) : "", telefone: c.telefone ?? "", email: c.email ?? "" }); setModal("editar"); }}
+                          className="text-blue-600 hover:underline text-xs"
+                        >
+                          Editar
+                        </button>
+                        <button
+                          onClick={(e) => { e.stopPropagation(); setSelecionado(c); setModal("excluir"); }}
+                          className="text-red-500 hover:underline text-xs"
+                        >
+                          Excluir
+                        </button>
+                      </>
+                    )}
                     <span className="text-gray-400 text-xs">{aberto ? "▲" : "▼"}</span>
                   </div>
                 </div>
@@ -235,25 +244,27 @@ export default function ListaConselhos() {
                       </div>
                     )}
                     {/* Adicionar empresa */}
-                    <div className="flex gap-2">
-                      <select
-                        value={addEmpresaId}
-                        onChange={(e) => setAddEmpresaId(e.target.value)}
-                        className="flex-1 rounded-md border border-gray-300 px-3 py-1.5 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
-                      >
-                        <option value="">Adicionar empresa ao {c.tipo}...</option>
-                        {disponiveis.map((e) => (
-                          <option key={e.id} value={e.id}>{e.razaoSocial}</option>
-                        ))}
-                      </select>
-                      <button
-                        onClick={() => adicionarEmpresa(c.id)}
-                        disabled={!addEmpresaId}
-                        className="rounded-md bg-blue-700 px-3 py-1.5 text-xs font-medium text-white hover:bg-blue-800 disabled:opacity-40"
-                      >
-                        Adicionar
-                      </button>
-                    </div>
+                    {podeEditar && (
+                      <div className="flex gap-2">
+                        <select
+                          value={addEmpresaId}
+                          onChange={(e) => setAddEmpresaId(e.target.value)}
+                          className="flex-1 rounded-md border border-gray-300 px-3 py-1.5 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                        >
+                          <option value="">Adicionar empresa ao {c.tipo}...</option>
+                          {disponiveis.map((e) => (
+                            <option key={e.id} value={e.id}>{e.razaoSocial}</option>
+                          ))}
+                        </select>
+                        <button
+                          onClick={() => adicionarEmpresa(c.id)}
+                          disabled={!addEmpresaId}
+                          className="rounded-md bg-blue-700 px-3 py-1.5 text-xs font-medium text-white hover:bg-blue-800 disabled:opacity-40"
+                        >
+                          Adicionar
+                        </button>
+                      </div>
+                    )}
 
                     {/* Lista de empresas */}
                     {empresasDoConselho.length === 0 ? (
@@ -266,12 +277,14 @@ export default function ListaConselhos() {
                               <span className="text-sm font-medium text-gray-800">{emp.razaoSocial}</span>
                               <span className="ml-2 font-mono text-xs text-gray-400">{formatarCNPJ(emp.cnpj)}</span>
                             </div>
-                            <button
-                              onClick={() => removerEmpresa(c.id, emp.id)}
-                              className="text-red-500 hover:underline text-xs"
-                            >
-                              Remover
-                            </button>
+                            {podeEditar && (
+                              <button
+                                onClick={() => removerEmpresa(c.id, emp.id)}
+                                className="text-red-500 hover:underline text-xs"
+                              >
+                                Remover
+                              </button>
+                            )}
                           </div>
                         ))}
                       </div>
