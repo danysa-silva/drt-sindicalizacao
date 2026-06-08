@@ -5,11 +5,11 @@ import { usePathname, useRouter } from "next/navigation";
 import { useUsuario } from "./UserContext";
 
 const LINKS = [
-  { href: "/", label: "Empresas sindicalizadas" },
-  { href: "/sindicatos", label: "Sindicatos" },
-  { href: "/conselhos", label: "Conselhos e Comitês" },
-  { href: "/vinculos", label: "Vínculos" },
-  { href: "/alteracoes", label: "Log de segurança" },
+  { href: "/", label: "Empresas", label2: "Sindicalizadas" },
+  { href: "/sindicatos", label: "Sindicatos", label2: "" },
+  { href: "/conselhos", label: "Conselhos e Comitês", label2: "" },
+  { href: "/vinculos", label: "Vínculos", label2: "" },
+  { href: "/alteracoes", label: "Log de segurança", label2: "" },
 ];
 
 export default function NavBar() {
@@ -35,17 +35,17 @@ export default function NavBar() {
           </div>
           <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
             <nav className="flex gap-1 flex-wrap">
-              {LINKS.map(({ href, label }) => (
+              {LINKS.map(({ href, label, label2 }) => (
                 <Link
                   key={href}
                   href={href}
-                  className={`rounded-md px-3 py-1.5 text-sm font-medium transition ${
+                  className={`rounded-md px-3 py-1.5 text-sm font-medium transition text-center leading-tight ${
                     pathname === href
                       ? "bg-white text-blue-800"
                       : "text-blue-100 hover:bg-blue-700"
                   }`}
                 >
-                  {label}
+                  {label2 ? <>{label}<br />{label2}</> : label}
                 </Link>
               ))}
               {usuario?.perfil === "admin" && (
