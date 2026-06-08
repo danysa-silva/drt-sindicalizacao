@@ -76,6 +76,7 @@ export default function GerenciarUsuarios() {
                         className="rounded-md border border-gray-300 px-2 py-1 text-xs focus:border-blue-500 focus:outline-none disabled:opacity-50"
                       >
                         <option value="visualizador">Visualizador</option>
+                        <option value="editor">Editor</option>
                         <option value="admin">Admin</option>
                       </select>
                     )}
