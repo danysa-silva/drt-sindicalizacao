@@ -5,7 +5,7 @@ import { usePathname, useRouter } from "next/navigation";
 import { useUsuario } from "./UserContext";
 
 const LINKS = [
-  { href: "/", label: "Empresas" },
+  { href: "/", label: "Empresas sindicalizadas" },
   { href: "/sindicatos", label: "Sindicatos" },
   { href: "/conselhos", label: "Conselhos e Comitês" },
   { href: "/vinculos", label: "Vínculos" },
