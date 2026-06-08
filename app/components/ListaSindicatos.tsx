@@ -126,12 +126,11 @@ export default function ListaSindicatos() {
       </div>
 
       {/* Resumo */}
-      <div className="mb-4 grid grid-cols-2 gap-3 sm:grid-cols-4">
+      <div className="mb-4 grid grid-cols-2 gap-3 sm:grid-cols-3">
         {[
           { label: "Total", valor: sindicatos.length, cor: "text-gray-800" },
           { label: "Patronais", valor: sindicatos.filter((s) => s.tipo === "patronal").length, cor: "text-indigo-700" },
           { label: "Laborais", valor: sindicatos.filter((s) => s.tipo === "laboral").length, cor: "text-orange-600" },
-          { label: "Afinidade Alta", valor: sindicatos.filter((s) => s.afinidadeFieam?.toUpperCase() === "ALTO").length, cor: "text-blue-700" },
         ].map(({ label, valor, cor }) => (
           <div key={label} className="rounded-lg bg-white border border-gray-200 px-4 py-3 shadow-sm">
             <p className="text-xs text-gray-500">{label}</p>
@@ -154,7 +153,6 @@ export default function ListaSindicatos() {
                   <th className="px-4 py-3 text-left">Nome</th>
                   <th className="px-4 py-3 text-left">Tipo</th>
                   <th className="px-4 py-3 text-left">CNPJ</th>
-                  <th className="px-4 py-3 text-left">Afinidade FIEAM</th>
                   <th className="px-4 py-3 text-left">Validade Mandato</th>
                   <th className="px-4 py-3 text-left">Empresas</th>
                   <th className="px-4 py-3 text-left">Presidente</th>
@@ -174,13 +172,6 @@ export default function ListaSindicatos() {
                     </td>
                     <td className="px-4 py-3 font-mono text-xs text-gray-500">
                       {s.cnpj ? formatarCNPJ(s.cnpj) : "—"}
-                    </td>
-                    <td className="px-4 py-3">
-                      {s.afinidadeFieam ? (
-                        <span className={`rounded-full px-2 py-0.5 text-xs font-medium uppercase ${badgeAfinidade(s.afinidadeFieam)}`}>
-                          {s.afinidadeFieam}
-                        </span>
-                      ) : <span className="text-gray-400 text-xs">—</span>}
                     </td>
                     <td className="px-4 py-3 text-xs text-gray-600">
                       {s.validadeMandato || <span className="text-gray-400">—</span>}
