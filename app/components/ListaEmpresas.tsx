@@ -43,13 +43,6 @@ function badgeStatus(status: string) {
     : "bg-red-100 text-red-700 border border-red-200";
 }
 
-function badgeAfinidade(afinidade: string | null) {
-  if (!afinidade) return "bg-gray-100 text-gray-500";
-  const a = afinidade.toUpperCase();
-  if (a === "ALTO") return "bg-blue-100 text-blue-700 border border-blue-200";
-  if (a === "MÉDIO" || a === "MEDIO") return "bg-yellow-100 text-yellow-700 border border-yellow-200";
-  return "bg-red-100 text-red-600 border border-red-200";
-}
 
 function badgeSituacaoRFB(s: string | null) {
   if (!s) return "";
@@ -80,7 +73,6 @@ export default function ListaEmpresas() {
   const [empresas, setEmpresas] = useState<Empresa[]>([]);
   const [filtro, setFiltro] = useState("");
   const [filtroStatus, setFiltroStatus] = useState("todos");
-  const [filtroAfinidade, setFiltroAfinidade] = useState("todas");
   const [filtroSindicato, setFiltroSindicato] = useState("todos");
   const [modal, setModal] = useState<"novo" | "editar" | "excluir" | "importar" | "ver" | null>(null);
   const [selecionada, setSelecionada] = useState<Empresa | null>(null);
@@ -120,7 +112,7 @@ export default function ListaEmpresas() {
   function exportarCSV() {
     const cabecalhos = [
       "CNPJ", "Razão Social", "Perfil", "CNAE", "Ramo de Atividade",
-      "Situação RFB", "Afinidade", "Sindicato", "Tipo Sindicato",
+      "Situação RFB", "Sindicato", "Tipo Sindicato",
       "Data Sindicalização", "Data Vencimento", "Status DRT", "Observações",
     ];
 
@@ -139,7 +131,6 @@ export default function ListaEmpresas() {
         e.cnae ?? "",
         e.ramoAtividade ?? "",
         e.situacaoRFB ?? "",
-        e.afinidade ?? "",
         e.sindicato?.nome ?? "",
         e.sindicato?.tipo ?? "",
         formatarData(e.dataSindicalizacao),
@@ -217,13 +208,10 @@ export default function ListaEmpresas() {
       corresponde(e.razaoSocial, filtro) ||
       (cnpjBusca.length > 0 && e.cnpj.includes(cnpjBusca));
     const passaStatus = filtroStatus === "todos" || e.status === filtroStatus;
-    const passaAfinidade =
-      filtroAfinidade === "todas" ||
-      (e.afinidade?.toUpperCase() ?? "") === filtroAfinidade.toUpperCase();
     const passaSindicato =
       filtroSindicato === "todos" ||
       (filtroSindicato === "sem_sindicato" ? !e.sindicatoId : e.sindicatoId === Number(filtroSindicato));
-    return passaTexto && passaStatus && passaAfinidade && passaSindicato;
+    return passaTexto && passaStatus && passaSindicato;
   });
 
   return (
@@ -245,16 +233,6 @@ export default function ListaEmpresas() {
             <option value="todos">Todos os status</option>
             <option value="ativo">Ativos</option>
             <option value="inativo">Inativos</option>
-          </select>
-          <select
-            value={filtroAfinidade}
-            onChange={(e) => setFiltroAfinidade(e.target.value)}
-            className="rounded-lg border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
-          >
-            <option value="todas">Toda afinidade</option>
-            <option value="ALTO">Afinidade Alta</option>
-            <option value="MÉDIO">Afinidade Média</option>
-            <option value="BAIXO">Afinidade Baixa</option>
           </select>
           <select
             value={filtroSindicato}
@@ -325,7 +303,6 @@ export default function ListaEmpresas() {
                   <th className="px-4 py-3 text-left">Perfil / CNAE</th>
                   <th className="px-4 py-3 text-left">Sindicato</th>
                   <th className="px-4 py-3 text-left">Sit. RFB</th>
-                  <th className="px-4 py-3 text-left">Afinidade</th>
                   <th className="px-4 py-3 text-left">Vencimento</th>
                   <th className="px-4 py-3 text-left">Status DRT</th>
                   <th className="px-4 py-3 text-right">Ações</th>
@@ -354,13 +331,6 @@ export default function ListaEmpresas() {
                       <span className={`text-xs font-medium ${badgeSituacaoRFB(e.situacaoRFB)}`}>
                         {e.situacaoRFB ?? "—"}
                       </span>
-                    </td>
-                    <td className="px-4 py-3">
-                      {e.afinidade ? (
-                        <span className={`rounded-full px-2 py-0.5 text-xs font-medium uppercase ${badgeAfinidade(e.afinidade)}`}>
-                          {e.afinidade}
-                        </span>
-                      ) : <span className="text-gray-400 text-xs">—</span>}
                     </td>
                     <td className="px-4 py-3">
                       <span className={vencida(e.dataVencimento) && e.status === "ativo" ? "text-orange-600 font-medium text-xs" : "text-gray-600 text-xs"}>
@@ -407,11 +377,6 @@ export default function ListaEmpresas() {
                 <span className={`rounded-full px-3 py-1 text-xs font-semibold capitalize ${badgeStatus(selecionada.status)}`}>
                   {selecionada.status}
                 </span>
-                {selecionada.afinidade && (
-                  <span className={`rounded-full px-3 py-1 text-xs font-semibold uppercase ${badgeAfinidade(selecionada.afinidade)}`}>
-                    Afinidade {selecionada.afinidade}
-                  </span>
-                )}
               </div>
             </div>
 
