@@ -76,6 +76,7 @@ function Row({ label, valor, classe }: { label: string; valor?: string | null; c
 export default function ListaEmpresas() {
   const usuario = useUsuario();
   const isAdmin = usuario?.perfil === "admin" || usuario?.perfil === "editor";
+  const podeExcluir = usuario?.perfil === "admin";
   const [empresas, setEmpresas] = useState<Empresa[]>([]);
   const [filtro, setFiltro] = useState("");
   const [filtroStatus, setFiltroStatus] = useState("todos");
@@ -374,10 +375,10 @@ export default function ListaEmpresas() {
                     </td>
                     <td className="px-4 py-3 text-right">
                       {isAdmin && (
-                        <>
-                          <button onClick={(ev) => { ev.stopPropagation(); abrirEditar(e); }} className="mr-2 text-blue-600 hover:underline text-xs">Editar</button>
-                          <button onClick={(ev) => { ev.stopPropagation(); abrirExcluir(e); }} className="text-red-500 hover:underline text-xs">Excluir</button>
-                        </>
+                        <button onClick={(ev) => { ev.stopPropagation(); abrirEditar(e); }} className="mr-2 text-blue-600 hover:underline text-xs">Editar</button>
+                      )}
+                      {podeExcluir && (
+                        <button onClick={(ev) => { ev.stopPropagation(); abrirExcluir(e); }} className="text-red-500 hover:underline text-xs">Excluir</button>
                       )}
                     </td>
                   </tr>

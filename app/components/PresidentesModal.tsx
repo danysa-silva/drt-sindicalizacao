@@ -20,6 +20,7 @@ const VAZIO = { nome: "", cargo: "", email: "", telefone: "", dataInicio: "", da
 export default function PresidentesModal({ sindicatoId, onFechar }: Props) {
   const usuario = useUsuario();
   const podeEditar = usuario?.perfil === "admin" || usuario?.perfil === "editor";
+  const podeExcluir = usuario?.perfil === "admin";
   const [presidentes, setPresidentes] = useState<Presidente[]>([]);
   const [form, setForm] = useState(VAZIO);
   const [editandoId, setEditandoId] = useState<number | null>(null);
@@ -94,12 +95,14 @@ export default function PresidentesModal({ sindicatoId, onFechar }: Props) {
                   {p.telefone && <span>{p.telefone}</span>}
                 </div>
               </div>
-              {podeEditar && (
-                <div className="flex gap-2 ml-4 shrink-0">
+              <div className="flex gap-2 ml-4 shrink-0">
+                {podeEditar && (
                   <button onClick={() => editarPresidente(p)} className="text-blue-600 hover:underline text-xs">Editar</button>
+                )}
+                {podeExcluir && (
                   <button onClick={() => excluir(p.id)} className="text-red-500 hover:underline text-xs">Excluir</button>
-                </div>
-              )}
+                )}
+              </div>
             </div>
           ))}
         </div>

@@ -41,6 +41,7 @@ function badgeTipo(tipo: string) {
 export default function ListaConselhos() {
   const usuario = useUsuario();
   const podeEditar = usuario?.perfil === "admin" || usuario?.perfil === "editor";
+  const podeExcluir = usuario?.perfil === "admin";
   const [conselhos, setConselhos] = useState<Conselho[]>([]);
   const [todasEmpresas, setTodasEmpresas] = useState<EmpresaAll[]>([]);
   const [todosPresidentes, setTodosPresidentes] = useState<PresidenteLite[]>([]);
@@ -189,20 +190,20 @@ export default function ListaConselhos() {
                   </div>
                   <div className="flex items-center gap-3">
                     {podeEditar && (
-                      <>
-                        <button
-                          onClick={(e) => { e.stopPropagation(); setSelecionado(c); setNovoForm({ nome: c.nome, tipo: c.tipo, titular: c.titular ?? "", suplente: c.suplente ?? "", titularId: c.titularId ? String(c.titularId) : "", suplenteId: c.suplenteId ? String(c.suplenteId) : "", telefone: c.telefone ?? "", email: c.email ?? "" }); setModal("editar"); }}
-                          className="text-blue-600 hover:underline text-xs"
-                        >
-                          Editar
-                        </button>
-                        <button
-                          onClick={(e) => { e.stopPropagation(); setSelecionado(c); setModal("excluir"); }}
-                          className="text-red-500 hover:underline text-xs"
-                        >
-                          Excluir
-                        </button>
-                      </>
+                      <button
+                        onClick={(e) => { e.stopPropagation(); setSelecionado(c); setNovoForm({ nome: c.nome, tipo: c.tipo, titular: c.titular ?? "", suplente: c.suplente ?? "", titularId: c.titularId ? String(c.titularId) : "", suplenteId: c.suplenteId ? String(c.suplenteId) : "", telefone: c.telefone ?? "", email: c.email ?? "" }); setModal("editar"); }}
+                        className="text-blue-600 hover:underline text-xs"
+                      >
+                        Editar
+                      </button>
+                    )}
+                    {podeExcluir && (
+                      <button
+                        onClick={(e) => { e.stopPropagation(); setSelecionado(c); setModal("excluir"); }}
+                        className="text-red-500 hover:underline text-xs"
+                      >
+                        Excluir
+                      </button>
                     )}
                     <span className="text-gray-400 text-xs">{aberto ? "▲" : "▼"}</span>
                   </div>

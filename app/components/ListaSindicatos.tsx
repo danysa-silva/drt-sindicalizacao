@@ -48,6 +48,7 @@ function badgeTipo(tipo: string) {
 export default function ListaSindicatos() {
   const usuario = useUsuario();
   const podeEditar = usuario?.perfil === "admin" || usuario?.perfil === "editor";
+  const podeExcluir = usuario?.perfil === "admin";
   const [sindicatos, setSindicatos] = useState<Sindicato[]>([]);
   const [filtro, setFiltro] = useState("");
   const [filtroTipo, setFiltroTipo] = useState("todos");
@@ -218,20 +219,20 @@ export default function ListaSindicatos() {
                         Presidentes
                       </button>
                       {podeEditar && (
-                        <>
-                          <button
-                            onClick={() => { setSelecionado(s); setModal("editar"); }}
-                            className="mr-2 text-blue-600 hover:underline text-xs"
-                          >
-                            Editar
-                          </button>
-                          <button
-                            onClick={() => { setSelecionado(s); setModal("excluir"); }}
-                            className="text-red-500 hover:underline text-xs"
-                          >
-                            Excluir
-                          </button>
-                        </>
+                        <button
+                          onClick={() => { setSelecionado(s); setModal("editar"); }}
+                          className="mr-2 text-blue-600 hover:underline text-xs"
+                        >
+                          Editar
+                        </button>
+                      )}
+                      {podeExcluir && (
+                        <button
+                          onClick={() => { setSelecionado(s); setModal("excluir"); }}
+                          className="text-red-500 hover:underline text-xs"
+                        >
+                          Excluir
+                        </button>
                       )}
                     </td>
                   </tr>

@@ -24,6 +24,7 @@ function formatarCPF(cpf: string) {
 export default function ListaRepresentantes() {
   const usuario = useUsuario();
   const podeEditar = usuario?.perfil === "admin" || usuario?.perfil === "editor";
+  const podeExcluir = usuario?.perfil === "admin";
 
   const [representantes, setRepresentantes] = useState<Representante[]>([]);
   const [filtro, setFiltro] = useState("");
@@ -205,10 +206,10 @@ export default function ListaRepresentantes() {
                         Vínculos
                       </button>
                       {podeEditar && (
-                        <>
-                          <button onClick={() => abrirEditar(r)} className="text-blue-600 hover:underline text-xs">Editar</button>
-                          <button onClick={() => abrirExcluir(r)} className="text-red-500 hover:underline text-xs">Excluir</button>
-                        </>
+                        <button onClick={() => abrirEditar(r)} className="text-blue-600 hover:underline text-xs">Editar</button>
+                      )}
+                      {podeExcluir && (
+                        <button onClick={() => abrirExcluir(r)} className="text-red-500 hover:underline text-xs">Excluir</button>
                       )}
                     </td>
                   </tr>
