@@ -57,9 +57,10 @@ model Empresa {
   createdAt          DateTime  @default(now())
   updatedAt          DateTime  @updatedAt
 
-  sindicato  Sindicato?        @relation(fields: [sindicatoId], references: [id])
-  conselhos  ConselhoEmpresa[]
-  historico  HistoricoAlteracao[]
+  sindicato      Sindicato?           @relation(fields: [sindicatoId], references: [id])
+  conselhos      ConselhoEmpresa[]
+  historico      HistoricoAlteracao[]
+  representantes RepresentanteEmpresa[]
 }
 
 model Conselho {
@@ -135,6 +136,7 @@ model Representante {
 
   sindicatos RepresentanteSindicato[]
   conselhos  RepresentanteConselho[]
+  empresas   RepresentanteEmpresa[]
 }
 
 model RepresentanteSindicato {
@@ -163,4 +165,25 @@ model RepresentanteConselho {
   conselho      Conselho      @relation(fields: [conselhoId],      references: [id], onDelete: Cascade)
 
   @@unique([representanteId, conselhoId, papel])
+}
+
+model RepresentanteEmpresa {
+  id                      Int       @id @default(autoincrement())
+  representanteId         Int
+  empresaId               Int
+  tipoRelacao             String
+  cargoNaEmpresa          String?
+  observacao              String?
+  aplicaCondicaoComercial Boolean   @default(false)
+  tipoCondicaoComercial   String?
+  dataInicio              DateTime?
+  dataFim                 DateTime?
+  ativo                   Boolean   @default(true)
+  createdAt               DateTime  @default(now())
+  updatedAt               DateTime  @updatedAt
+
+  representante Representante @relation(fields: [representanteId], references: [id], onDelete: Cascade)
+  empresa       Empresa       @relation(fields: [empresaId],       references: [id], onDelete: Cascade)
+
+  @@unique([representanteId, empresaId, tipoRelacao])
 }

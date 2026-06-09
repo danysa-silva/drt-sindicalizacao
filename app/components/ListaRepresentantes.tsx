@@ -37,10 +37,16 @@ export default function ListaRepresentantes() {
 
   const carregar = useCallback(async () => {
     setCarregando(true);
-    const res = await fetch("/api/representantes");
-    const data = await res.json();
-    setRepresentantes(Array.isArray(data) ? data : []);
-    setCarregando(false);
+    try {
+      const res = await fetch("/api/representantes");
+      const text = await res.text();
+      const data = text ? JSON.parse(text) : [];
+      setRepresentantes(Array.isArray(data) ? data : []);
+    } catch {
+      setRepresentantes([]);
+    } finally {
+      setCarregando(false);
+    }
   }, []);
 
   useEffect(() => { carregar(); }, [carregar]);
@@ -102,7 +108,11 @@ export default function ListaRepresentantes() {
       }),
     });
 
-    const data = await res.json();
+    let data: { error?: string } = {};
+    try {
+      const text = await res.text();
+      if (text) data = JSON.parse(text);
+    } catch { /* empty body */ }
     if (!res.ok) {
       setErro(data.error ?? "Erro ao salvar.");
     } else {

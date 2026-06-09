@@ -8,6 +8,7 @@ const LINKS = [
   { href: "/", label: "Empresas", label2: "Sindicalizadas" },
   { href: "/sindicatos", label: "Sindicatos", label2: "Filiados" },
   { href: "/conselhos", label: "Conselhos e Comitês", label2: "" },
+  { href: "/representantes", label: "Representantes", label2: "" },
   { href: "/vinculos", label: "Vínculos", label2: "" },
   { href: "/alteracoes", label: "Log de segurança", label2: "" },
 ];
