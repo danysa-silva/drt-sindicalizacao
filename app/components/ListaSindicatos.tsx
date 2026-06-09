@@ -3,17 +3,8 @@
 import { useState, useEffect, useCallback } from "react";
 import Modal from "./Modal";
 import SindicatoForm from "./SindicatoForm";
-import PresidentesModal from "./PresidentesModal";
 import EmpresasSindicatoModal from "./EmpresasSindicatoModal";
 import { useUsuario } from "./UserContext";
-
-type Presidente = {
-  id: number;
-  nome: string;
-  cargo: string | null;
-  email: string | null;
-  telefone: string | null;
-};
 
 type Sindicato = {
   id: number;
@@ -23,7 +14,6 @@ type Sindicato = {
   afinidadeFieam: string | null;
   validadeMandato: string | null;
   observacoes: string | null;
-  presidentes: Presidente[];
   _count: { empresas: number };
 };
 
@@ -52,7 +42,7 @@ export default function ListaSindicatos() {
   const [sindicatos, setSindicatos] = useState<Sindicato[]>([]);
   const [filtro, setFiltro] = useState("");
   const [filtroTipo, setFiltroTipo] = useState("todos");
-  const [modal, setModal] = useState<"novo" | "editar" | "excluir" | "presidentes" | "empresas" | null>(null);
+  const [modal, setModal] = useState<"novo" | "editar" | "excluir" | "empresas" | null>(null);
   const [selecionado, setSelecionado] = useState<Sindicato | null>(null);
   const [carregando, setCarregando] = useState(true);
 
@@ -154,7 +144,6 @@ export default function ListaSindicatos() {
                   <th className="px-4 py-3 text-left">Tipo</th>
                   <th className="px-4 py-3 text-left">CNPJ</th>
                   <th className="px-4 py-3 text-left">Validade Mandato</th>
-                  <th className="px-4 py-3 text-left">Presidente</th>
                   <th className="px-4 py-3 text-left">Empresas</th>
                   <th className="px-4 py-3 text-right">Ações</th>
                 </tr>
@@ -176,14 +165,6 @@ export default function ListaSindicatos() {
                     <td className="px-4 py-3 text-xs text-gray-600">
                       {s.validadeMandato || <span className="text-gray-400">—</span>}
                     </td>
-                    <td className="px-4 py-3 text-xs text-gray-600 max-w-[160px]">
-                      {s.presidentes[0] ? (
-                        <div>
-                          <div className="font-medium truncate" title={s.presidentes[0].nome}>{s.presidentes[0].nome}</div>
-                          {s.presidentes[0].cargo && <div className="text-gray-400 truncate">{s.presidentes[0].cargo}</div>}
-                        </div>
-                      ) : <span className="text-gray-400">—</span>}
-                    </td>
                     <td className="px-4 py-3 text-center text-sm text-gray-600 font-medium">
                       {s._count.empresas > 0 ? (
                         <button
@@ -202,12 +183,6 @@ export default function ListaSindicatos() {
                         className="mr-2 text-green-600 hover:underline text-xs"
                       >
                         Empresas
-                      </button>
-                      <button
-                        onClick={() => { setSelecionado(s); setModal("presidentes"); }}
-                        className="mr-2 text-indigo-600 hover:underline text-xs"
-                      >
-                        Presidentes
                       </button>
                       {podeEditar && (
                         <button
@@ -257,12 +232,6 @@ export default function ListaSindicatos() {
       {modal === "empresas" && selecionado && (
         <Modal titulo={`Empresas — ${selecionado.nome}`} onFechar={fecharModal} largo>
           <EmpresasSindicatoModal sindicatoId={selecionado.id} nomeSindicato={selecionado.nome} onFechar={fecharModal} />
-        </Modal>
-      )}
-
-      {modal === "presidentes" && selecionado && (
-        <Modal titulo={`Presidentes — ${selecionado.nome}`} onFechar={fecharModal}>
-          <PresidentesModal sindicatoId={selecionado.id} onFechar={fecharModal} />
         </Modal>
       )}
 
