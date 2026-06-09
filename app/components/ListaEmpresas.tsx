@@ -49,6 +49,7 @@ function badgeSituacaoRFB(s: string | null) {
   const upper = s.toUpperCase();
   if (upper === "ATIVA") return "text-green-700";
   if (upper === "BAIXADA") return "text-gray-500";
+  if (upper === "SUSPENSA") return "text-orange-600";
   return "text-red-600";
 }
 

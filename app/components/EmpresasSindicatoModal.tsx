@@ -94,7 +94,7 @@ export default function EmpresasSindicatoModal({ sindicatoId, nomeSindicato, onF
                     <td className="px-4 py-2 text-xs text-gray-500">{e.cnae || "—"}</td>
                     <td className="px-4 py-2 text-xs">
                       {e.situacaoRFB ? (
-                        <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${e.situacaoRFB.toUpperCase() === "ATIVA" ? "bg-green-100 text-green-700" : "bg-red-100 text-red-600"}`}>
+                        <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${e.situacaoRFB.toUpperCase() === "ATIVA" ? "bg-green-100 text-green-700" : e.situacaoRFB.toUpperCase() === "SUSPENSA" ? "bg-orange-100 text-orange-600" : e.situacaoRFB.toUpperCase() === "BAIXADA" ? "bg-gray-100 text-gray-500" : "bg-red-100 text-red-600"}`}>
                           {e.situacaoRFB}
                         </span>
                       ) : <span className="text-gray-400">—</span>}

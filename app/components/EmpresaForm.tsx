@@ -207,6 +207,7 @@ export default function EmpresaForm({ inicial, onSalvar, onCancelar }: Props) {
             <option value="ATIVA">Ativa</option>
             <option value="BAIXADA">Baixada</option>
             <option value="INAPTA">Inapta</option>
+            <option value="SUSPENSA">Suspensa</option>
           </select>
         </div>
       </div>
