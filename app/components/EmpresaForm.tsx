@@ -212,19 +212,20 @@ export default function EmpresaForm({ inicial, onSalvar, onCancelar }: Props) {
         </div>
       </div>
 
-      <div>
-        <label className={lbl}>CNAE</label>
-        <input name="cnae" value={form.cnae} onChange={handleChange} placeholder="Ex: 1113-5/01" className={inp} />
-      </div>
-
-      <div>
-        <label className={lbl}>Afinidade FIEAM</label>
-        <select name="afinidade" value={form.afinidade} onChange={handleChange} className={inp}>
-          <option value="">Não informado</option>
-          <option value="ALTO">Alto</option>
-          <option value="MÉDIO">Médio</option>
-          <option value="BAIXO">Baixo</option>
-        </select>
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+        <div>
+          <label className={lbl}>CNAE</label>
+          <input name="cnae" value={form.cnae} onChange={handleChange} placeholder="Ex: 1113-5/01" className={inp} />
+        </div>
+        <div>
+          <label className={lbl}>Afinidade FIEAM</label>
+          <select name="afinidade" value={form.afinidade} onChange={handleChange} className={inp}>
+            <option value="">Não informado</option>
+            <option value="ALTO">Alto</option>
+            <option value="MÉDIO">Médio</option>
+            <option value="BAIXO">Baixo</option>
+          </select>
+        </div>
       </div>
 
       <div>
