@@ -32,7 +32,12 @@ export async function GET() {
   const sindicatos = await prisma.sindicato.findMany({
     orderBy: { nome: "asc" },
     include: {
-      presidentes: { orderBy: { createdAt: "desc" }, take: 1 },
+      representantes: {
+        where: { papel: "presidente" },
+        include: { representante: { select: { id: true, nome: true } } },
+        orderBy: { createdAt: "desc" },
+        take: 1,
+      },
       _count: { select: { empresas: true } },
     },
   });

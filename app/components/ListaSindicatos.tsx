@@ -6,6 +6,10 @@ import SindicatoForm from "./SindicatoForm";
 import EmpresasSindicatoModal from "./EmpresasSindicatoModal";
 import { useUsuario } from "./UserContext";
 
+type RepresentanteVinculo = {
+  representante: { id: number; nome: string };
+};
+
 type Sindicato = {
   id: number;
   nome: string;
@@ -14,6 +18,7 @@ type Sindicato = {
   afinidadeFieam: string | null;
   validadeMandato: string | null;
   observacoes: string | null;
+  representantes: RepresentanteVinculo[];
   _count: { empresas: number };
 };
 
@@ -144,6 +149,7 @@ export default function ListaSindicatos() {
                   <th className="px-4 py-3 text-left">Tipo</th>
                   <th className="px-4 py-3 text-left">CNPJ</th>
                   <th className="px-4 py-3 text-left">Validade Mandato</th>
+                  <th className="px-4 py-3 text-left">Presidente</th>
                   <th className="px-4 py-3 text-left">Empresas</th>
                   <th className="px-4 py-3 text-right">Ações</th>
                 </tr>
@@ -164,6 +170,13 @@ export default function ListaSindicatos() {
                     </td>
                     <td className="px-4 py-3 text-xs text-gray-600">
                       {s.validadeMandato || <span className="text-gray-400">—</span>}
+                    </td>
+                    <td className="px-4 py-3 text-xs text-gray-600 max-w-[160px]">
+                      {s.representantes[0] ? (
+                        <span className="font-medium truncate block" title={s.representantes[0].representante.nome}>
+                          {s.representantes[0].representante.nome}
+                        </span>
+                      ) : <span className="text-gray-400">—</span>}
                     </td>
                     <td className="px-4 py-3 text-center text-sm text-gray-600 font-medium">
                       {s._count.empresas > 0 ? (
