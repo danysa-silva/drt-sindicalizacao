@@ -22,6 +22,7 @@ const empresaSchema = z.object({
   dataVencimento: z
     .string({ error: "Data de vencimento é obrigatória" })
     .refine((v) => !isNaN(new Date(v).getTime()), { message: "Data de vencimento inválida" }),
+  tipoUnidade: z.string().nullish(),
   cnae: z.string().nullish(),
   ramoAtividade: z.string().nullish(),
   perfil: z.string().nullish(),
@@ -56,7 +57,7 @@ export async function POST(request: NextRequest) {
   }
 
   const {
-    cnpj, razaoSocial, sindicatoId, cnae, ramoAtividade, perfil,
+    cnpj, tipoUnidade, razaoSocial, sindicatoId, cnae, ramoAtividade, perfil,
     situacaoRFB, afinidade, dataSindicalizacao, dataVencimento, status, observacoes,
   } = resultado.data;
 
@@ -68,6 +69,7 @@ export async function POST(request: NextRequest) {
   const empresa = await prisma.empresa.create({
     data: {
       cnpj,
+      tipoUnidade: tipoUnidade ?? null,
       razaoSocial,
       cnae: cnae ?? null,
       ramoAtividade: ramoAtividade ?? null,

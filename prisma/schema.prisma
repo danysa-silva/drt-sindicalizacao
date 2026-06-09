@@ -43,6 +43,7 @@ model PresidenteSindicato {
 model Empresa {
   id                 Int       @id @default(autoincrement())
   cnpj               String    @unique
+  tipoUnidade        String?
   razaoSocial        String
   cnae               String?
   ramoAtividade      String?

@@ -6,6 +6,7 @@ type Sindicato = { id: number; nome: string; tipo: string };
 
 type EmpresaFormData = {
   cnpj: string;
+  tipoUnidade: string;
   razaoSocial: string;
   cnae: string;
   ramoAtividade: string;
@@ -22,6 +23,7 @@ type EmpresaFormData = {
 type InitialEmpresa = {
   id?: number;
   cnpj?: string | null;
+  tipoUnidade?: string | null;
   razaoSocial?: string | null;
   cnae?: string | null;
   ramoAtividade?: string | null;
@@ -52,7 +54,7 @@ function formatarCNPJ(valor: string) {
 }
 
 const CAMPOS_VAZIOS: EmpresaFormData = {
-  cnpj: "", razaoSocial: "", cnae: "", ramoAtividade: "", perfil: "",
+  cnpj: "", tipoUnidade: "", razaoSocial: "", cnae: "", ramoAtividade: "", perfil: "",
   situacaoRFB: "", afinidade: "", sindicatoId: "",
   dataSindicalizacao: "", dataVencimento: "", status: "ativo", observacoes: "",
 };
@@ -79,6 +81,7 @@ export default function EmpresaForm({ inicial, onSalvar, onCancelar }: Props) {
     if (inicial) {
       setForm({
         cnpj: inicial.cnpj ? formatarCNPJ(inicial.cnpj) : "",
+        tipoUnidade: inicial.tipoUnidade ?? "",
         razaoSocial: inicial.razaoSocial ?? "",
         cnae: inicial.cnae ?? "",
         ramoAtividade: inicial.ramoAtividade ?? "",
@@ -171,10 +174,18 @@ export default function EmpresaForm({ inicial, onSalvar, onCancelar }: Props) {
         </div>
       )}
 
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
         <div>
           <label className={lbl}>CNPJ *</label>
           <input name="cnpj" value={form.cnpj} onChange={handleChange} placeholder="00.000.000/0000-00" required className={inp} />
+        </div>
+        <div>
+          <label className={lbl}>Tipo</label>
+          <select name="tipoUnidade" value={form.tipoUnidade} onChange={handleChange} className={inp}>
+            <option value="">Não informado</option>
+            <option value="matriz">Matriz</option>
+            <option value="filial">Filial</option>
+          </select>
         </div>
         <div>
           <label className={lbl}>Status no DRT *</label>
