@@ -129,7 +129,9 @@ export default function VinculosRepresentanteModal({ representanteId, representa
     dataFim: "",
     ativo: true,
   });
-  const [filtroEmpresa, setFiltroEmpresa] = useState("");
+  const [filtroSindicato, setFiltroSindicato] = useState("");
+  const [filtroConselho,  setFiltroConselho]  = useState("");
+  const [filtroEmpresa,   setFiltroEmpresa]   = useState("");
 
   const [erroSind, setErroSind] = useState("");
   const [erroCons, setErroCons] = useState("");
@@ -182,7 +184,7 @@ export default function VinculosRepresentanteModal({ representanteId, representa
     });
     const data = await safeJson<{ error?: string }>(res, {});
     if (!res.ok) { setErroSind(data.error ?? "Erro ao vincular."); }
-    else { setFormSind({ sindicatoId: "", papel: "presidente", dataInicio: "", dataFim: "" }); await carregar(); }
+    else { setFormSind({ sindicatoId: "", papel: "presidente", dataInicio: "", dataFim: "" }); setFiltroSindicato(""); await carregar(); }
     setSalvandoSind(false);
   }
 
@@ -206,7 +208,7 @@ export default function VinculosRepresentanteModal({ representanteId, representa
     });
     const data = await safeJson<{ error?: string }>(res, {});
     if (!res.ok) { setErroCons(data.error ?? "Erro ao vincular."); }
-    else { setFormCons({ conselhoId: "", papel: "titular" }); await carregar(); }
+    else { setFormCons({ conselhoId: "", papel: "titular" }); setFiltroConselho(""); await carregar(); }
     setSalvandoCons(false);
   }
 
@@ -249,6 +251,14 @@ export default function VinculosRepresentanteModal({ representanteId, representa
     await fetch(`/api/representantes/${representanteId}/empresas/${vinculoId}`, { method: "DELETE" });
     await carregar();
   }
+
+  const sindicatosFiltrados = sindicatos.filter((s) =>
+    !filtroSindicato || s.nome.toLowerCase().includes(filtroSindicato.toLowerCase())
+  );
+
+  const conselhosFiltrados = conselhos.filter((c) =>
+    !filtroConselho || c.nome.toLowerCase().includes(filtroConselho.toLowerCase())
+  );
 
   const empresasFiltradas = empresas.filter((e) => {
     if (!filtroEmpresa) return true;
@@ -333,15 +343,25 @@ export default function VinculosRepresentanteModal({ representanteId, representa
             {podeEditar && (
               <form onSubmit={adicionarSindicato} className="rounded-lg border border-dashed border-gray-300 bg-gray-50 p-4 space-y-3">
                 <p className="text-xs font-medium text-gray-600">Adicionar vínculo com sindicato</p>
-                <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                <div className="space-y-1">
+                  <input
+                    type="text"
+                    value={filtroSindicato}
+                    onChange={(e) => setFiltroSindicato(e.target.value)}
+                    placeholder="Filtrar sindicato por nome..."
+                    className={inp}
+                  />
                   <select
                     value={formSind.sindicatoId}
                     onChange={(e) => setFormSind({ ...formSind, sindicatoId: e.target.value })}
+                    size={4}
                     className={inp}
                   >
-                    <option value="">Selecione o sindicato</option>
-                    {sindicatos.map((s) => <option key={s.id} value={s.id}>{s.nome}</option>)}
+                    <option value="">— selecione —</option>
+                    {sindicatosFiltrados.map((s) => <option key={s.id} value={s.id}>{s.nome}</option>)}
                   </select>
+                </div>
+                <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
                   <select
                     value={formSind.papel}
                     onChange={(e) => setFormSind({ ...formSind, papel: e.target.value })}
@@ -415,15 +435,25 @@ export default function VinculosRepresentanteModal({ representanteId, representa
             {podeEditar && (
               <form onSubmit={adicionarConselho} className="rounded-lg border border-dashed border-gray-300 bg-gray-50 p-4 space-y-3">
                 <p className="text-xs font-medium text-gray-600">Adicionar vínculo com conselho/comitê</p>
-                <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                <div className="space-y-1">
+                  <input
+                    type="text"
+                    value={filtroConselho}
+                    onChange={(e) => setFiltroConselho(e.target.value)}
+                    placeholder="Filtrar conselho/comitê por nome..."
+                    className={inp}
+                  />
                   <select
                     value={formCons.conselhoId}
                     onChange={(e) => setFormCons({ ...formCons, conselhoId: e.target.value })}
+                    size={4}
                     className={inp}
                   >
-                    <option value="">Selecione o conselho/comitê</option>
-                    {conselhos.map((c) => <option key={c.id} value={c.id}>{c.nome} ({c.tipo})</option>)}
+                    <option value="">— selecione —</option>
+                    {conselhosFiltrados.map((c) => <option key={c.id} value={c.id}>{c.nome} ({c.tipo})</option>)}
                   </select>
+                </div>
+                <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                   <select
                     value={formCons.papel}
                     onChange={(e) => setFormCons({ ...formCons, papel: e.target.value })}
