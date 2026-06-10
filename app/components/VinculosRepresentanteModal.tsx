@@ -35,11 +35,24 @@ type VinculoEmpresa = {
   empresa: EmpresaLite;
 };
 
-const PAPEIS_SINDICATO = ["presidente", "vice-presidente", "diretor", "outro"];
+const PAPEIS_SINDICATO = [
+  "presidente",
+  "vice-presidente",
+  "secretario",
+  "tesoureiro",
+  "diretor",
+  "conselho-fiscal",
+  "suplente",
+  "outro",
+];
 const LABEL_PAPEL_SINDICATO: Record<string, string> = {
   "presidente":      "Presidente",
   "vice-presidente": "Vice-Presidente",
+  "secretario":      "Secretário",
+  "tesoureiro":      "Tesoureiro",
   "diretor":         "Diretor",
+  "conselho-fiscal": "Conselho Fiscal",
+  "suplente":        "Suplente",
   "outro":           "Outro",
 };
 const PAPEIS_CONSELHO  = ["titular", "suplente", "membro", "outro"];

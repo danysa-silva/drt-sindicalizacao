@@ -5,7 +5,16 @@ import { getUsuarioFromRequest, podeAlterar } from "@/lib/auth";
 
 type Params = { params: Promise<{ id: string }> };
 
-const PAPEIS_SINDICATO = ["presidente", "vice-presidente", "diretor", "outro"];
+const PAPEIS_SINDICATO = [
+  "presidente",
+  "vice-presidente",
+  "secretario",
+  "tesoureiro",
+  "diretor",
+  "conselho-fiscal",
+  "suplente",
+  "outro",
+];
 
 const vinculoSindicatoSchema = z.object({
   sindicatoId: z.coerce
