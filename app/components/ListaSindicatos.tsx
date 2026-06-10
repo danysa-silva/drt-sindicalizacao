@@ -6,25 +6,13 @@ import SindicatoForm from "./SindicatoForm";
 import EmpresasSindicatoModal from "./EmpresasSindicatoModal";
 import { useUsuario } from "./UserContext";
 
+type RepresentanteLite = { id: number; nome: string };
+
 type RepresentanteVinculo = {
   id: number;
+  representanteId: number;
   papel: string;
   representante: { id: number; nome: string };
-};
-
-const PAPEIS_ORDER = [
-  "presidente", "vice-presidente", "secretario", "tesoureiro",
-  "diretor", "conselho-fiscal", "suplente", "outro",
-];
-const LABEL_PAPEL: Record<string, string> = {
-  "presidente":      "Presidente",
-  "vice-presidente": "Vice-Presidente",
-  "secretario":      "Secretário",
-  "tesoureiro":      "Tesoureiro",
-  "diretor":         "Diretor",
-  "conselho-fiscal": "Conselho Fiscal",
-  "suplente":        "Suplente",
-  "outro":           "Outro",
 };
 
 type Sindicato = {
@@ -39,17 +27,20 @@ type Sindicato = {
   _count: { empresas: number };
 };
 
-function formatarCNPJ(cnpj: string) {
-  return cnpj.replace(/^(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})$/, "$1.$2.$3/$4-$5");
-}
-
-function badgeAfinidade(a: string | null) {
-  if (!a) return "bg-gray-100 text-gray-400";
-  const u = a.toUpperCase();
-  if (u === "ALTO") return "bg-blue-100 text-blue-700 border border-blue-200";
-  if (u === "MÉDIO" || u === "MEDIO") return "bg-yellow-100 text-yellow-700 border border-yellow-200";
-  return "bg-red-100 text-red-600 border border-red-200";
-}
+const PAPEIS_SINDICATO = [
+  "presidente", "vice-presidente", "secretario", "tesoureiro",
+  "diretor", "conselho-fiscal", "suplente", "outro",
+];
+const LABEL_PAPEL: Record<string, string> = {
+  "presidente":      "Presidente",
+  "vice-presidente": "Vice-Presidente",
+  "secretario":      "Secretário",
+  "tesoureiro":      "Tesoureiro",
+  "diretor":         "Diretor",
+  "conselho-fiscal": "Conselho Fiscal",
+  "suplente":        "Suplente",
+  "outro":           "Outro",
+};
 
 function badgeTipo(tipo: string) {
   return tipo === "patronal"
@@ -61,18 +52,28 @@ export default function ListaSindicatos() {
   const usuario = useUsuario();
   const podeEditar = usuario?.perfil === "admin" || usuario?.perfil === "editor";
   const podeExcluir = usuario?.perfil === "admin";
+
   const [sindicatos, setSindicatos] = useState<Sindicato[]>([]);
+  const [todosRepresentantes, setTodosRepresentantes] = useState<RepresentanteLite[]>([]);
   const [filtro, setFiltro] = useState("");
   const [filtroTipo, setFiltroTipo] = useState("todos");
+  const [expandido, setExpandido] = useState<number | null>(null);
   const [modal, setModal] = useState<"novo" | "editar" | "excluir" | "empresas" | null>(null);
   const [selecionado, setSelecionado] = useState<Sindicato | null>(null);
   const [carregando, setCarregando] = useState(true);
 
+  const [addRepId, setAddRepId] = useState("");
+  const [addPapel, setAddPapel] = useState("presidente");
+
   const carregar = useCallback(async () => {
     setCarregando(true);
-    const res = await fetch("/api/sindicatos");
-    const data = await res.json();
-    setSindicatos(data);
+    const [rs, rr] = await Promise.all([
+      fetch("/api/sindicatos"),
+      fetch("/api/representantes"),
+    ]);
+    setSindicatos(await rs.json());
+    const rrData = await rr.json();
+    setTodosRepresentantes(Array.isArray(rrData) ? rrData : []);
     setCarregando(false);
   }, []);
 
@@ -84,6 +85,22 @@ export default function ListaSindicatos() {
     if (!selecionado) return;
     await fetch(`/api/sindicatos/${selecionado.id}`, { method: "DELETE" });
     setModal(null);
+    carregar();
+  }
+
+  async function adicionarMembro(sindicatoId: number) {
+    if (!addRepId) return;
+    await fetch(`/api/representantes/${addRepId}/sindicatos`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ sindicatoId, papel: addPapel }),
+    });
+    setAddRepId("");
+    carregar();
+  }
+
+  async function removerMembro(representanteId: number, vinculoId: number) {
+    await fetch(`/api/representantes/${representanteId}/sindicatos/${vinculoId}`, { method: "DELETE" });
     carregar();
   }
 
@@ -151,103 +168,126 @@ export default function ListaSindicatos() {
         ))}
       </div>
 
-      {/* Tabela */}
-      <div className="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm">
-        {carregando ? (
-          <div className="py-16 text-center text-sm text-gray-400">Carregando...</div>
-        ) : filtrados.length === 0 ? (
-          <div className="py-16 text-center text-sm text-gray-400">Nenhum sindicato encontrado.</div>
-        ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead className="bg-gray-50 text-xs font-medium uppercase tracking-wide text-gray-500">
-                <tr>
-                  <th className="px-4 py-3 text-left">Nome</th>
-                  <th className="px-4 py-3 text-left">Tipo</th>
-                  <th className="px-4 py-3 text-left">CNPJ</th>
-                  <th className="px-4 py-3 text-left">Validade Mandato</th>
-                  <th className="px-4 py-3 text-left">Membros</th>
-                  <th className="px-4 py-3 text-left">Empresas</th>
-                  <th className="px-4 py-3 text-right">Ações</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-100">
-                {filtrados.map((s) => (
-                  <tr key={s.id} className="hover:bg-gray-50">
-                    <td className="px-4 py-3 font-medium text-gray-900">
-                      {s.nome}
-                    </td>
-                    <td className="px-4 py-3">
-                      <span className={`rounded-full px-2 py-0.5 text-xs font-medium capitalize ${badgeTipo(s.tipo)}`}>
-                        {s.tipo}
+      {/* Lista acordeão */}
+      {carregando ? (
+        <div className="py-16 text-center text-sm text-gray-400">Carregando...</div>
+      ) : filtrados.length === 0 ? (
+        <div className="py-16 text-center text-sm text-gray-400">Nenhum sindicato encontrado.</div>
+      ) : (
+        <div className="space-y-2">
+          {filtrados.map((s) => {
+            const aberto = expandido === s.id;
+            const membrosOrdenados = [...s.representantes].sort(
+              (a, b) => PAPEIS_SINDICATO.indexOf(a.papel) - PAPEIS_SINDICATO.indexOf(b.papel)
+            );
+
+            return (
+              <div key={s.id} className="rounded-xl border border-gray-200 bg-white shadow-sm overflow-hidden">
+                <div
+                  className="flex items-center justify-between px-4 py-3 cursor-pointer hover:bg-gray-50"
+                  onClick={() => setExpandido(aberto ? null : s.id)}
+                >
+                  <div className="flex items-center gap-3 min-w-0">
+                    <span className={`shrink-0 rounded-full px-2 py-0.5 text-xs font-medium capitalize ${badgeTipo(s.tipo)}`}>
+                      {s.tipo === "patronal" ? "Patronal" : "Laboral"}
+                    </span>
+                    <span className="font-medium text-gray-900 text-sm truncate">{s.nome}</span>
+                    <button
+                      onClick={(e) => { e.stopPropagation(); setSelecionado(s); setModal("empresas"); }}
+                      className="shrink-0 text-xs text-gray-400 hover:text-blue-600 hover:underline"
+                    >
+                      {s._count.empresas} empresa{s._count.empresas !== 1 ? "s" : ""}
+                    </button>
+                    {s.representantes.length > 0 && (
+                      <span className="shrink-0 text-xs text-blue-500">
+                        {s.representantes.length} membro{s.representantes.length !== 1 ? "s" : ""}
                       </span>
-                    </td>
-                    <td className="px-4 py-3 font-mono text-xs text-gray-500">
-                      {s.cnpj ? formatarCNPJ(s.cnpj) : "—"}
-                    </td>
-                    <td className="px-4 py-3 text-xs text-gray-600">
-                      {s.validadeMandato || <span className="text-gray-400">—</span>}
-                    </td>
-                    <td className="px-4 py-3">
-                      {s.representantes.length === 0 ? (
-                        <span className="text-xs text-gray-400">—</span>
+                    )}
+                  </div>
+                  <div className="flex items-center gap-3 shrink-0 ml-3">
+                    {podeEditar && (
+                      <button
+                        onClick={(e) => { e.stopPropagation(); setSelecionado(s); setModal("editar"); }}
+                        className="text-blue-600 hover:underline text-xs"
+                      >
+                        Editar
+                      </button>
+                    )}
+                    {podeExcluir && (
+                      <button
+                        onClick={(e) => { e.stopPropagation(); setSelecionado(s); setModal("excluir"); }}
+                        className="text-red-500 hover:underline text-xs"
+                      >
+                        Excluir
+                      </button>
+                    )}
+                    <span className="text-gray-400 text-xs">{aberto ? "▲" : "▼"}</span>
+                  </div>
+                </div>
+
+                {aberto && (
+                  <div className="border-t border-gray-100 px-4 py-4 space-y-4">
+                    <div>
+                      <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">Membros</p>
+                      {membrosOrdenados.length > 0 ? (
+                        <div className="flex flex-wrap gap-1.5 mb-2">
+                          {membrosOrdenados.map((r) => (
+                            <span key={r.id} className="inline-flex items-center gap-1 rounded-full bg-blue-50 border border-blue-100 px-2.5 py-0.5 text-xs text-blue-700">
+                              <span className="font-medium">{r.representante.nome}</span>
+                              <span className="text-blue-400 ml-0.5">· {LABEL_PAPEL[r.papel] ?? r.papel}</span>
+                              {podeEditar && (
+                                <button
+                                  onClick={() => removerMembro(r.representanteId, r.id)}
+                                  className="ml-1 text-blue-300 hover:text-red-500 font-bold leading-none"
+                                  title="Remover"
+                                >
+                                  ×
+                                </button>
+                              )}
+                            </span>
+                          ))}
+                        </div>
                       ) : (
-                        <div className="flex flex-wrap gap-1.5">
-                          {[...s.representantes]
-                            .sort((a, b) => PAPEIS_ORDER.indexOf(a.papel) - PAPEIS_ORDER.indexOf(b.papel))
-                            .map((r) => (
-                              <span key={r.id} className="inline-flex items-center gap-1 rounded-full border border-blue-200 bg-blue-50 px-2 py-0.5 text-xs font-medium text-blue-800">
-                                {r.representante.nome}
-                                <span className="text-blue-400">·</span>
-                                <span className="font-normal text-blue-600">{LABEL_PAPEL[r.papel] ?? r.papel}</span>
-                              </span>
+                        <p className="text-xs text-gray-400 mb-2">Nenhum membro vinculado.</p>
+                      )}
+                      {podeEditar && (
+                        <div className="flex gap-2">
+                          <select
+                            value={addRepId}
+                            onChange={(e) => setAddRepId(e.target.value)}
+                            className="flex-1 rounded-md border border-gray-300 px-2 py-1.5 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                          >
+                            <option value="">Adicionar representante...</option>
+                            {todosRepresentantes.map((r) => (
+                              <option key={r.id} value={r.id}>{r.nome}</option>
                             ))}
+                          </select>
+                          <select
+                            value={addPapel}
+                            onChange={(e) => setAddPapel(e.target.value)}
+                            className="rounded-md border border-gray-300 px-2 py-1.5 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                          >
+                            {PAPEIS_SINDICATO.map((p) => (
+                              <option key={p} value={p}>{LABEL_PAPEL[p]}</option>
+                            ))}
+                          </select>
+                          <button
+                            onClick={() => adicionarMembro(s.id)}
+                            disabled={!addRepId}
+                            className="rounded-md bg-blue-700 px-3 py-1.5 text-xs font-medium text-white hover:bg-blue-800 disabled:opacity-40"
+                          >
+                            Adicionar
+                          </button>
                         </div>
                       )}
-                    </td>
-                    <td className="px-4 py-3 text-center text-sm text-gray-600 font-medium">
-                      {s._count.empresas > 0 ? (
-                        <button
-                          onClick={() => { setSelecionado(s); setModal("empresas"); }}
-                          className="text-blue-600 hover:underline font-semibold"
-                        >
-                          {s._count.empresas}
-                        </button>
-                      ) : (
-                        <span className="text-gray-400">0</span>
-                      )}
-                    </td>
-                    <td className="px-4 py-3 text-right whitespace-nowrap">
-                      <button
-                        onClick={() => { setSelecionado(s); setModal("empresas"); }}
-                        className="mr-2 text-green-600 hover:underline text-xs"
-                      >
-                        Empresas
-                      </button>
-                      {podeEditar && (
-                        <button
-                          onClick={() => { setSelecionado(s); setModal("editar"); }}
-                          className="mr-2 text-blue-600 hover:underline text-xs"
-                        >
-                          Editar
-                        </button>
-                      )}
-                      {podeExcluir && (
-                        <button
-                          onClick={() => { setSelecionado(s); setModal("excluir"); }}
-                          className="text-red-500 hover:underline text-xs"
-                        >
-                          Excluir
-                        </button>
-                      )}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )}
-      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+            );
+          })}
+        </div>
+      )}
 
       <p className="mt-3 text-xs text-gray-400">
         {filtrados.length} sindicato{filtrados.length !== 1 ? "s" : ""} exibido{filtrados.length !== 1 ? "s" : ""}
