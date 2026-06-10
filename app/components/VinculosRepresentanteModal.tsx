@@ -66,13 +66,6 @@ const TIPOS_RELACAO    = [
   "financeiro",
   "outro",
 ];
-const TIPOS_CONDICAO = [
-  "desconto-diferenciado",
-  "negociacao-especial",
-  "prioridade-atendimento",
-  "outro",
-];
-
 const LABEL_RELACAO: Record<string, string> = {
   "dono": "Dono",
   "socio": "Sócio",
@@ -81,13 +74,6 @@ const LABEL_RELACAO: Record<string, string> = {
   "contato-comercial": "Contato Comercial",
   "rh": "RH",
   "financeiro": "Financeiro",
-  "outro": "Outro",
-};
-
-const LABEL_CONDICAO: Record<string, string> = {
-  "desconto-diferenciado": "Desconto Diferenciado",
-  "negociacao-especial": "Negociação Especial",
-  "prioridade-atendimento": "Prioridade de Atendimento",
   "outro": "Outro",
 };
 
@@ -142,8 +128,6 @@ export default function VinculosRepresentanteModal({ representanteId, representa
     tipoRelacao: "dono",
     cargoNaEmpresa: "",
     observacao: "",
-    aplicaCondicaoComercial: false,
-    tipoCondicaoComercial: "",
     dataInicio: "",
     dataFim: "",
     ativo: true,
@@ -249,8 +233,6 @@ export default function VinculosRepresentanteModal({ representanteId, representa
         tipoRelacao: formEmp.tipoRelacao,
         cargoNaEmpresa: formEmp.cargoNaEmpresa || null,
         observacao: formEmp.observacao || null,
-        aplicaCondicaoComercial: formEmp.aplicaCondicaoComercial,
-        tipoCondicaoComercial: formEmp.aplicaCondicaoComercial ? (formEmp.tipoCondicaoComercial || null) : null,
         dataInicio: formEmp.dataInicio || null,
         dataFim: formEmp.dataFim || null,
         ativo: formEmp.ativo,
@@ -259,7 +241,7 @@ export default function VinculosRepresentanteModal({ representanteId, representa
     const data = await safeJson<{ error?: string }>(res, {});
     if (!res.ok) { setErroEmp(data.error ?? "Erro ao vincular."); }
     else {
-      setFormEmp({ empresaId: "", tipoRelacao: "dono", cargoNaEmpresa: "", observacao: "", aplicaCondicaoComercial: false, tipoCondicaoComercial: "", dataInicio: "", dataFim: "", ativo: true });
+      setFormEmp({ empresaId: "", tipoRelacao: "dono", cargoNaEmpresa: "", observacao: "", dataInicio: "", dataFim: "", ativo: true });
       setFiltroEmpresa("");
       await carregar();
     }
@@ -504,7 +486,6 @@ export default function VinculosRepresentanteModal({ representanteId, representa
                       <th className="px-4 py-2 text-left">Empresa</th>
                       <th className="px-4 py-2 text-left">Tipo de Relação</th>
                       <th className="px-4 py-2 text-left">Cargo</th>
-                      <th className="px-4 py-2 text-left">Condição Comercial</th>
                       <th className="px-4 py-2 text-left">Ativo</th>
                       {podeEditar && <th className="px-4 py-2 text-right">Ação</th>}
                     </tr>
@@ -522,15 +503,6 @@ export default function VinculosRepresentanteModal({ representanteId, representa
                           </span>
                         </td>
                         <td className="px-4 py-2 text-xs text-gray-500">{v.cargoNaEmpresa || "—"}</td>
-                        <td className="px-4 py-2 text-xs">
-                          {v.aplicaCondicaoComercial ? (
-                            <span className="rounded-full bg-yellow-50 border border-yellow-300 px-2 py-0.5 text-xs text-yellow-700">
-                              {v.tipoCondicaoComercial ? LABEL_CONDICAO[v.tipoCondicaoComercial] ?? v.tipoCondicaoComercial : "Sim"}
-                            </span>
-                          ) : (
-                            <span className="text-gray-400">—</span>
-                          )}
-                        </td>
                         <td className="px-4 py-2 text-xs">
                           <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${v.ativo ? "bg-green-50 text-green-700 border border-green-200" : "bg-gray-100 text-gray-500"}`}>
                             {v.ativo ? "Sim" : "Não"}
@@ -619,31 +591,6 @@ export default function VinculosRepresentanteModal({ representanteId, representa
                       className={inp}
                     />
                   </div>
-                </div>
-
-                {/* Condição comercial */}
-                <div className="space-y-2">
-                  <label className="flex items-center gap-2 text-sm text-gray-700 cursor-pointer">
-                    <input
-                      type="checkbox"
-                      checked={formEmp.aplicaCondicaoComercial}
-                      onChange={(e) => setFormEmp({ ...formEmp, aplicaCondicaoComercial: e.target.checked })}
-                      className="rounded border-gray-300"
-                    />
-                    Aplica condição comercial diferenciada
-                  </label>
-                  {formEmp.aplicaCondicaoComercial && (
-                    <select
-                      value={formEmp.tipoCondicaoComercial}
-                      onChange={(e) => setFormEmp({ ...formEmp, tipoCondicaoComercial: e.target.value })}
-                      className={inp}
-                    >
-                      <option value="">Selecione o tipo de condição...</option>
-                      {TIPOS_CONDICAO.map((t) => (
-                        <option key={t} value={t}>{LABEL_CONDICAO[t]}</option>
-                      ))}
-                    </select>
-                  )}
                 </div>
 
                 {/* Ativo */}

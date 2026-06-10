@@ -33,10 +33,8 @@ export async function GET() {
     orderBy: { nome: "asc" },
     include: {
       representantes: {
-        where: { papel: "presidente" },
         include: { representante: { select: { id: true, nome: true } } },
-        orderBy: { createdAt: "desc" },
-        take: 1,
+        orderBy: { createdAt: "asc" },
       },
       _count: { select: { empresas: true } },
     },

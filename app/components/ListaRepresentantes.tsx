@@ -12,14 +12,10 @@ type Representante = {
   email: string | null;
   telefone: string | null;
   observacoes: string | null;
-  _count: { sindicatos: number; conselhos: number };
+  _count: { sindicatos: number; conselhos: number; empresas: number };
 };
 
 const FORM_VAZIO = { nome: "", cpf: "", email: "", telefone: "", observacoes: "" };
-
-function formatarCPF(cpf: string) {
-  return cpf.replace(/^(\d{3})(\d{3})(\d{3})(\d{2})$/, "$1.$2.$3-$4");
-}
 
 export default function ListaRepresentantes() {
   const usuario = useUsuario();
@@ -179,10 +175,9 @@ export default function ListaRepresentantes() {
               <thead className="bg-gray-50 text-xs font-medium uppercase tracking-wide text-gray-500">
                 <tr>
                   <th className="px-4 py-3 text-left">Nome</th>
-                  <th className="px-4 py-3 text-left">CPF</th>
-                  <th className="px-4 py-3 text-left">Contato</th>
                   <th className="px-4 py-3 text-center">Sindicatos</th>
                   <th className="px-4 py-3 text-center">Conselhos</th>
+                  <th className="px-4 py-3 text-center">Empresas</th>
                   <th className="px-4 py-3 text-right">Ações</th>
                 </tr>
               </thead>
@@ -190,14 +185,6 @@ export default function ListaRepresentantes() {
                 {filtrados.map((r) => (
                   <tr key={r.id} className="hover:bg-gray-50">
                     <td className="px-4 py-3 font-medium text-gray-900">{r.nome}</td>
-                    <td className="px-4 py-3 font-mono text-xs text-gray-500">
-                      {r.cpf ? formatarCPF(r.cpf) : <span className="text-gray-300">—</span>}
-                    </td>
-                    <td className="px-4 py-3 text-gray-600 text-xs">
-                      {r.email && <div>{r.email}</div>}
-                      {r.telefone && <div className="text-gray-400">{r.telefone}</div>}
-                      {!r.email && !r.telefone && <span className="text-gray-300">—</span>}
-                    </td>
                     <td className="px-4 py-3 text-center">
                       <span className={`rounded-full px-2.5 py-0.5 text-xs font-semibold ${r._count.sindicatos > 0 ? "bg-blue-100 text-blue-700" : "bg-gray-100 text-gray-400"}`}>
                         {r._count.sindicatos}
@@ -206,6 +193,11 @@ export default function ListaRepresentantes() {
                     <td className="px-4 py-3 text-center">
                       <span className={`rounded-full px-2.5 py-0.5 text-xs font-semibold ${r._count.conselhos > 0 ? "bg-green-100 text-green-700" : "bg-gray-100 text-gray-400"}`}>
                         {r._count.conselhos}
+                      </span>
+                    </td>
+                    <td className="px-4 py-3 text-center">
+                      <span className={`rounded-full px-2.5 py-0.5 text-xs font-semibold ${r._count.empresas > 0 ? "bg-orange-100 text-orange-700" : "bg-gray-100 text-gray-400"}`}>
+                        {r._count.empresas}
                       </span>
                     </td>
                     <td className="px-4 py-3 text-right space-x-2">
@@ -311,10 +303,11 @@ export default function ListaRepresentantes() {
           <p className="text-sm text-gray-600 mb-2">
             Deseja excluir <strong>{selecionado.nome}</strong>?
           </p>
-          {(selecionado._count.sindicatos > 0 || selecionado._count.conselhos > 0) && (
+          {(selecionado._count.sindicatos > 0 || selecionado._count.conselhos > 0 || selecionado._count.empresas > 0) && (
             <p className="text-xs text-orange-600 bg-orange-50 border border-orange-200 rounded-md px-3 py-2 mb-4">
-              Este representante possui {selecionado._count.sindicatos} vínculo(s) com sindicatos e{" "}
-              {selecionado._count.conselhos} vínculo(s) com conselhos. Todos serão removidos.
+              Este representante possui {selecionado._count.sindicatos} vínculo(s) com sindicatos,{" "}
+              {selecionado._count.conselhos} vínculo(s) com conselhos e{" "}
+              {selecionado._count.empresas} vínculo(s) com empresas. Todos serão removidos.
             </p>
           )}
           <div className="flex justify-end gap-3 mt-4">

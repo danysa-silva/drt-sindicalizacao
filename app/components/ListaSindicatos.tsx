@@ -7,7 +7,24 @@ import EmpresasSindicatoModal from "./EmpresasSindicatoModal";
 import { useUsuario } from "./UserContext";
 
 type RepresentanteVinculo = {
+  id: number;
+  papel: string;
   representante: { id: number; nome: string };
+};
+
+const PAPEIS_ORDER = [
+  "presidente", "vice-presidente", "secretario", "tesoureiro",
+  "diretor", "conselho-fiscal", "suplente", "outro",
+];
+const LABEL_PAPEL: Record<string, string> = {
+  "presidente":      "Presidente",
+  "vice-presidente": "Vice-Presidente",
+  "secretario":      "Secretário",
+  "tesoureiro":      "Tesoureiro",
+  "diretor":         "Diretor",
+  "conselho-fiscal": "Conselho Fiscal",
+  "suplente":        "Suplente",
+  "outro":           "Outro",
 };
 
 type Sindicato = {
@@ -149,7 +166,7 @@ export default function ListaSindicatos() {
                   <th className="px-4 py-3 text-left">Tipo</th>
                   <th className="px-4 py-3 text-left">CNPJ</th>
                   <th className="px-4 py-3 text-left">Validade Mandato</th>
-                  <th className="px-4 py-3 text-left">Presidente</th>
+                  <th className="px-4 py-3 text-left">Membros</th>
                   <th className="px-4 py-3 text-left">Empresas</th>
                   <th className="px-4 py-3 text-right">Ações</th>
                 </tr>
@@ -171,12 +188,22 @@ export default function ListaSindicatos() {
                     <td className="px-4 py-3 text-xs text-gray-600">
                       {s.validadeMandato || <span className="text-gray-400">—</span>}
                     </td>
-                    <td className="px-4 py-3 text-xs text-gray-600 max-w-[160px]">
-                      {s.representantes[0] ? (
-                        <span className="font-medium truncate block" title={s.representantes[0].representante.nome}>
-                          {s.representantes[0].representante.nome}
-                        </span>
-                      ) : <span className="text-gray-400">—</span>}
+                    <td className="px-4 py-3">
+                      {s.representantes.length === 0 ? (
+                        <span className="text-xs text-gray-400">—</span>
+                      ) : (
+                        <div className="flex flex-wrap gap-1.5">
+                          {[...s.representantes]
+                            .sort((a, b) => PAPEIS_ORDER.indexOf(a.papel) - PAPEIS_ORDER.indexOf(b.papel))
+                            .map((r) => (
+                              <span key={r.id} className="inline-flex items-center gap-1 rounded-full border border-blue-200 bg-blue-50 px-2 py-0.5 text-xs font-medium text-blue-800">
+                                {r.representante.nome}
+                                <span className="text-blue-400">·</span>
+                                <span className="font-normal text-blue-600">{LABEL_PAPEL[r.papel] ?? r.papel}</span>
+                              </span>
+                            ))}
+                        </div>
+                      )}
                     </td>
                     <td className="px-4 py-3 text-center text-sm text-gray-600 font-medium">
                       {s._count.empresas > 0 ? (
@@ -237,7 +264,7 @@ export default function ListaSindicatos() {
           <SindicatoForm
             inicial={{
               ...selecionado,
-              presidenteRepresentanteId: selecionado.representantes[0]?.representante.id ?? null,
+              presidenteRepresentanteId: selecionado.representantes.find((r) => r.papel === "presidente")?.representante.id ?? null,
             }}
             onSalvar={() => { fecharModal(); carregar(); }}
             onCancelar={fecharModal}

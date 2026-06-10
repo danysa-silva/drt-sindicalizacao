@@ -36,7 +36,7 @@ export async function GET(request: NextRequest) {
   const representantes = await prisma.representante.findMany({
     orderBy: { nome: "asc" },
     include: {
-      _count: { select: { sindicatos: true, conselhos: true } },
+      _count: { select: { sindicatos: true, conselhos: true, empresas: true } },
     },
   });
 
