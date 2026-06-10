@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import * as XLSX from "xlsx";
 
 // ── tipos ─────────────────────────────────────────────────────────────────────
 
@@ -310,6 +311,100 @@ function SecaoResultados({ titulo, cor, children }: { titulo: string; cor: strin
   );
 }
 
+// ── exportação excel ──────────────────────────────────────────────────────────
+
+function exportarExcel(resposta: Resposta, busca: string) {
+  const wb = XLSX.utils.book_new();
+
+  function addSheet(nome: string, linhas: Record<string, string | number | null | undefined>[]) {
+    if (linhas.length === 0) return;
+    const ws = XLSX.utils.json_to_sheet(linhas);
+    XLSX.utils.book_append_sheet(wb, ws, nome.slice(0, 31));
+  }
+
+  function linhasPessoas(pessoas: ResultadoPessoa[]) {
+    const rows: Record<string, string>[] = [];
+    for (const p of pessoas) {
+      if (p.sindicatos.length === 0 && p.conselhos.length === 0 && p.empresas.length === 0) {
+        rows.push({ Nome: p.nome, "Tipo de Vínculo": "", Entidade: "", Papel: "" });
+      }
+      for (const v of p.sindicatos) {
+        rows.push({ Nome: p.nome, "Tipo de Vínculo": "Sindicato", Entidade: v.sindicato.nome, "Tipo": v.sindicato.tipo, Papel: LABEL_PAPEL_SIND[v.papel] ?? v.papel });
+      }
+      for (const v of p.conselhos) {
+        rows.push({ Nome: p.nome, "Tipo de Vínculo": v.conselho.tipo === "comite" ? "Comitê" : "Conselho", Entidade: v.conselho.nome, "Tipo": v.conselho.tipo, Papel: LABEL_PAPEL_CONS[v.papel] ?? v.papel });
+      }
+      for (const v of p.empresas) {
+        rows.push({ Nome: p.nome, "Tipo de Vínculo": "Empresa", Entidade: v.empresa.razaoSocial, "CNPJ": formatarCNPJ(v.empresa.cnpj), Papel: LABEL_RELACAO[v.tipoRelacao] ?? v.tipoRelacao, Cargo: v.cargoNaEmpresa ?? "" });
+      }
+    }
+    return rows;
+  }
+
+  function linhasSindicatos(sindicatos: ResultadoSindicato[]) {
+    const rows: Record<string, string | number>[] = [];
+    for (const s of sindicatos) {
+      if (s.representantes.length === 0) {
+        rows.push({ Sindicato: s.nome, Tipo: s.tipo, Membro: "", Papel: "", "Total Empresas": s._count.empresas });
+      }
+      for (const v of s.representantes) {
+        rows.push({ Sindicato: s.nome, Tipo: s.tipo, Membro: v.representante.nome, Papel: LABEL_PAPEL_SIND[v.papel] ?? v.papel, "Total Empresas": s._count.empresas });
+      }
+    }
+    return rows;
+  }
+
+  function linhasConselhos(conselhos: ResultadoConselho[]) {
+    const rows: Record<string, string>[] = [];
+    for (const c of conselhos) {
+      if (c.representantes.length === 0) {
+        rows.push({ Conselho: c.nome, Tipo: c.tipo, Membro: "", "Papel no Conselho": "", "Empresa do Membro": "", CNPJ: "", "Tipo de Relação": "" });
+      }
+      for (const v of c.representantes) {
+        if (v.representante.empresas.length === 0) {
+          rows.push({ Conselho: c.nome, Tipo: c.tipo, Membro: v.representante.nome, "Papel no Conselho": LABEL_PAPEL_CONS[v.papel] ?? v.papel, "Empresa do Membro": "", CNPJ: "", "Tipo de Relação": "" });
+        }
+        for (const e of v.representante.empresas) {
+          rows.push({ Conselho: c.nome, Tipo: c.tipo, Membro: v.representante.nome, "Papel no Conselho": LABEL_PAPEL_CONS[v.papel] ?? v.papel, "Empresa do Membro": e.empresa.razaoSocial, CNPJ: formatarCNPJ(e.empresa.cnpj), "Tipo de Relação": LABEL_RELACAO[e.tipoRelacao] ?? e.tipoRelacao });
+        }
+      }
+    }
+    return rows;
+  }
+
+  function linhasEmpresas(empresas: ResultadoEmpresa[]) {
+    const rows: Record<string, string>[] = [];
+    for (const e of empresas) {
+      if (e.representantes.length === 0) {
+        rows.push({ "Razão Social": e.razaoSocial, CNPJ: formatarCNPJ(e.cnpj), "Situação RFB": e.situacaoRFB ?? "", Sindicato: e.sindicato?.nome ?? "", "Tipo Sindicato": e.sindicato?.tipo ?? "", Representante: "", "Tipo de Relação": "" });
+      }
+      for (const v of e.representantes) {
+        rows.push({ "Razão Social": e.razaoSocial, CNPJ: formatarCNPJ(e.cnpj), "Situação RFB": e.situacaoRFB ?? "", Sindicato: e.sindicato?.nome ?? "", "Tipo Sindicato": e.sindicato?.tipo ?? "", Representante: v.representante.nome, "Tipo de Relação": LABEL_RELACAO[v.tipoRelacao] ?? v.tipoRelacao });
+      }
+    }
+    return rows;
+  }
+
+  if (resposta.tipo === "tudo") {
+    addSheet("Pessoas", linhasPessoas(resposta.pessoas));
+    addSheet("Sindicatos", linhasSindicatos(resposta.sindicatos));
+    addSheet("Conselhos e Comitês", linhasConselhos(resposta.conselhos));
+    addSheet("Empresas", linhasEmpresas(resposta.empresas));
+  } else if (resposta.tipo === "pessoa") {
+    addSheet("Pessoas", linhasPessoas(resposta.resultados));
+  } else if (resposta.tipo === "sindicato") {
+    addSheet("Sindicatos", linhasSindicatos(resposta.resultados));
+  } else if (resposta.tipo === "conselho") {
+    addSheet("Conselhos e Comitês", linhasConselhos(resposta.resultados));
+  } else if (resposta.tipo === "empresa") {
+    addSheet("Empresas", linhasEmpresas(resposta.resultados));
+  }
+
+  if (wb.SheetNames.length === 0) return;
+  const nomeArquivo = `vinculos-${busca.replace(/\s+/g, "-").toLowerCase()}-${new Date().toISOString().slice(0, 10)}.xlsx`;
+  XLSX.writeFile(wb, nomeArquivo);
+}
+
 // ── componente principal ──────────────────────────────────────────────────────
 
 export default function ConsultaVinculos() {
@@ -401,9 +496,20 @@ export default function ConsultaVinculos() {
 
       {resposta !== null && !carregando && resposta.total > 0 && (
         <>
-          <p className="text-xs text-gray-500 mb-4">
-            {resposta.total} resultado{resposta.total !== 1 ? "s" : ""} para <strong>"{busca}"</strong>
-          </p>
+          <div className="flex items-center justify-between mb-4">
+            <p className="text-xs text-gray-500">
+              {resposta.total} resultado{resposta.total !== 1 ? "s" : ""} para <strong>"{busca}"</strong>
+            </p>
+            <button
+              onClick={() => exportarExcel(resposta, busca)}
+              className="inline-flex items-center gap-1.5 rounded-lg border border-green-600 bg-white px-3 py-1.5 text-sm font-medium text-green-700 hover:bg-green-50 transition"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/>
+              </svg>
+              Exportar Excel
+            </button>
+          </div>
 
           {resposta.tipo === "tudo" && (
             <div className="space-y-6">
