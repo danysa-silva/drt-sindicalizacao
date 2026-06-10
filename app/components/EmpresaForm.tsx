@@ -69,6 +69,7 @@ function ehCnaeIndustria(cnae: string): boolean {
 export default function EmpresaForm({ inicial, onSalvar, onCancelar }: Props) {
   const [form, setForm] = useState<EmpresaFormData>(CAMPOS_VAZIOS);
   const [sindicatos, setSindicatos] = useState<Sindicato[]>([]);
+  const [filtroSindicato, setFiltroSindicato] = useState("");
   const [erro, setErro] = useState("");
   const [salvando, setSalvando] = useState(false);
   const [confirmarNaoIndustria, setConfirmarNaoIndustria] = useState(false);
@@ -241,13 +242,22 @@ export default function EmpresaForm({ inicial, onSalvar, onCancelar }: Props) {
 
       <div>
         <label className={lbl}>Sindicato Vinculado</label>
+        <input
+          type="text"
+          value={filtroSindicato}
+          onChange={(e) => setFiltroSindicato(e.target.value)}
+          placeholder="Pesquisar sindicato..."
+          className={`${inp} mb-1`}
+        />
         <select name="sindicatoId" value={form.sindicatoId} onChange={handleChange} className={inp}>
           <option value="">Selecione um sindicato...</option>
-          {sindicatos.map((s) => (
-            <option key={s.id} value={s.id}>
-              {s.nome} ({s.tipo})
-            </option>
-          ))}
+          {sindicatos
+            .filter((s) => !filtroSindicato || s.nome.toLowerCase().includes(filtroSindicato.toLowerCase()))
+            .map((s) => (
+              <option key={s.id} value={s.id}>
+                {s.nome} ({s.tipo})
+              </option>
+            ))}
         </select>
       </div>
 
