@@ -91,5 +91,53 @@ export async function GET(request: NextRequest) {
     return Response.json({ tipo, total: resultados.length, resultados });
   }
 
+  if (tipo === "tudo") {
+    const termoNumerico = busca.replace(/\D/g, "");
+    const [pessoas, sindicatos, conselhos, empresas] = await Promise.all([
+      prisma.representante.findMany({
+        where: { nome: { contains: busca, mode: "insensitive" } },
+        include: {
+          sindicatos: { include: { sindicato: { select: { id: true, nome: true, tipo: true } } }, orderBy: { createdAt: "asc" } },
+          conselhos:  { include: { conselho:  { select: { id: true, nome: true, tipo: true } } }, orderBy: { createdAt: "asc" } },
+          empresas:   { where: { ativo: true }, include: { empresa: { select: { id: true, razaoSocial: true, cnpj: true } } }, orderBy: { createdAt: "asc" } },
+        },
+        orderBy: { nome: "asc" },
+      }),
+      prisma.sindicato.findMany({
+        where: { nome: { contains: busca, mode: "insensitive" } },
+        include: {
+          representantes: { include: { representante: { select: { id: true, nome: true } } }, orderBy: { createdAt: "asc" } },
+          _count: { select: { empresas: true } },
+        },
+        orderBy: { nome: "asc" },
+      }),
+      prisma.conselho.findMany({
+        where: { nome: { contains: busca, mode: "insensitive" } },
+        include: {
+          representantes: { include: { representante: { select: { id: true, nome: true } } }, orderBy: { createdAt: "asc" } },
+          empresas: { include: { empresa: { select: { id: true, razaoSocial: true, cnpj: true } } } },
+        },
+        orderBy: { nome: "asc" },
+      }),
+      prisma.empresa.findMany({
+        where: {
+          OR: [
+            { razaoSocial: { contains: busca, mode: "insensitive" } },
+            ...(termoNumerico.length >= 4 ? [{ cnpj: { contains: termoNumerico } }] : []),
+          ],
+        },
+        include: {
+          sindicato: { select: { id: true, nome: true, tipo: true } },
+          representantes: { where: { ativo: true }, include: { representante: { select: { id: true, nome: true } } } },
+        },
+        orderBy: { razaoSocial: "asc" },
+        take: 50,
+      }),
+    ]);
+
+    const total = pessoas.length + sindicatos.length + conselhos.length + empresas.length;
+    return Response.json({ tipo, total, pessoas, sindicatos, conselhos, empresas });
+  }
+
   return Response.json({ error: "Tipo de busca inválido." }, { status: 400 });
 }
