@@ -2,6 +2,8 @@
 
 import { useState, useEffect } from "react";
 
+type Representante = { id: number; nome: string };
+
 type SindicatoFormData = {
   nome: string;
   tipo: string;
@@ -19,6 +21,7 @@ type InitialSindicato = {
   afinidadeFieam?: string | null;
   validadeMandato?: string | null;
   observacoes?: string | null;
+  presidenteRepresentanteId?: number | null;
 };
 
 type Props = {
@@ -42,8 +45,18 @@ const VAZIO: SindicatoFormData = {
 
 export default function SindicatoForm({ inicial, onSalvar, onCancelar }: Props) {
   const [form, setForm] = useState<SindicatoFormData>(VAZIO);
+  const [presidenteId, setPresidenteId] = useState("");
+  const [representantes, setRepresentantes] = useState<Representante[]>([]);
+  const [filtroRep, setFiltroRep] = useState("");
   const [erro, setErro] = useState("");
   const [salvando, setSalvando] = useState(false);
+
+  useEffect(() => {
+    fetch("/api/representantes")
+      .then((r) => r.ok ? r.json() : [])
+      .then((data) => setRepresentantes(Array.isArray(data) ? data : []))
+      .catch(() => {});
+  }, []);
 
   useEffect(() => {
     if (inicial) {
@@ -55,6 +68,7 @@ export default function SindicatoForm({ inicial, onSalvar, onCancelar }: Props) 
         validadeMandato: inicial.validadeMandato ?? "",
         observacoes: inicial.observacoes ?? "",
       });
+      setPresidenteId(inicial.presidenteRepresentanteId ? String(inicial.presidenteRepresentanteId) : "");
     }
   }, [inicial]);
 
@@ -81,14 +95,37 @@ export default function SindicatoForm({ inicial, onSalvar, onCancelar }: Props) 
       body: JSON.stringify(form),
     });
 
-    if (res.ok) {
-      onSalvar();
-    } else {
+    if (!res.ok) {
       const data = await res.json();
       setErro(data.error ?? "Erro ao salvar sindicato");
+      setSalvando(false);
+      return;
     }
+
+    const sindicatoSalvo = await res.json();
+    const sindicatoId = sindicatoSalvo.id ?? inicial?.id;
+
+    const presidenteAnteriorNum = inicial?.presidenteRepresentanteId
+      ? Number(inicial.presidenteRepresentanteId)
+      : null;
+    const presidenteNovo = presidenteId ? Number(presidenteId) : null;
+
+    if (presidenteNovo !== presidenteAnteriorNum && sindicatoId) {
+      await fetch(`/api/sindicatos/${sindicatoId}/presidente`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ representanteId: presidenteNovo }),
+      });
+    }
+
+    onSalvar();
     setSalvando(false);
   }
+
+  const repFiltrados = representantes.filter((r) => {
+    if (String(r.id) === presidenteId) return true;
+    return !filtroRep || r.nome.toLowerCase().includes(filtroRep.toLowerCase());
+  });
 
   const lbl = "block text-sm font-medium text-gray-700 mb-1";
   const inp = "w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500";
@@ -132,6 +169,26 @@ export default function SindicatoForm({ inicial, onSalvar, onCancelar }: Props) 
           <label className={lbl}>Validade do Mandato</label>
           <input name="validadeMandato" value={form.validadeMandato} onChange={handleChange} placeholder="Ex: 08/04/2023" className={inp} />
         </div>
+      </div>
+
+      <div>
+        <label className={lbl}>Presidente</label>
+        <input
+          value={filtroRep}
+          onChange={(e) => setFiltroRep(e.target.value)}
+          placeholder="Filtrar representantes..."
+          className={`mb-1 ${inp}`}
+        />
+        <select
+          value={presidenteId}
+          onChange={(e) => setPresidenteId(e.target.value)}
+          className={inp}
+        >
+          <option value="">— Nenhum —</option>
+          {repFiltrados.map((r) => (
+            <option key={r.id} value={r.id}>{r.nome}</option>
+          ))}
+        </select>
       </div>
 
       <div>

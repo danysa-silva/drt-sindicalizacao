@@ -235,7 +235,10 @@ export default function ListaSindicatos() {
       {modal === "editar" && selecionado && (
         <Modal titulo="Editar Sindicato" onFechar={fecharModal}>
           <SindicatoForm
-            inicial={selecionado}
+            inicial={{
+              ...selecionado,
+              presidenteRepresentanteId: selecionado.representantes[0]?.representante.id ?? null,
+            }}
             onSalvar={() => { fecharModal(); carregar(); }}
             onCancelar={fecharModal}
           />
