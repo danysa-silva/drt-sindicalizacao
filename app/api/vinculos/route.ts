@@ -57,7 +57,16 @@ export async function GET(request: NextRequest) {
       where: { nome: { contains: busca, mode: "insensitive" } },
       include: {
         representantes: {
-          include: { representante: { select: { id: true, nome: true } } },
+          include: {
+            representante: {
+              include: {
+                empresas: {
+                  where: { ativo: true },
+                  include: { empresa: { select: { id: true, razaoSocial: true, cnpj: true } } },
+                },
+              },
+            },
+          },
           orderBy: { createdAt: "asc" },
         },
         empresas: {
@@ -114,7 +123,19 @@ export async function GET(request: NextRequest) {
       prisma.conselho.findMany({
         where: { nome: { contains: busca, mode: "insensitive" } },
         include: {
-          representantes: { include: { representante: { select: { id: true, nome: true } } }, orderBy: { createdAt: "asc" } },
+          representantes: {
+            include: {
+              representante: {
+                include: {
+                  empresas: {
+                    where: { ativo: true },
+                    include: { empresa: { select: { id: true, razaoSocial: true, cnpj: true } } },
+                  },
+                },
+              },
+            },
+            orderBy: { createdAt: "asc" },
+          },
           empresas: { include: { empresa: { select: { id: true, razaoSocial: true, cnpj: true } } } },
         },
         orderBy: { nome: "asc" },

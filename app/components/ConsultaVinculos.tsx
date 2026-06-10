@@ -21,7 +21,13 @@ type ResultadoSindicato = {
 };
 type ResultadoConselho = {
   id: number; nome: string; tipo: string;
-  representantes: { id: number; papel: string; representante: { nome: string } }[];
+  representantes: {
+    id: number; papel: string;
+    representante: {
+      nome: string;
+      empresas: { id: number; tipoRelacao: string; empresa: EmpresaLite }[];
+    };
+  }[];
   empresas: { id: number; empresa: EmpresaLite }[];
 };
 type ResultadoEmpresa = {
@@ -175,42 +181,68 @@ function CartaoSindicato({ r }: { r: ResultadoSindicato }) {
 }
 
 function CartaoConselho({ r }: { r: ResultadoConselho }) {
-  const empresas = r.empresas.map((e) => e.empresa);
+  // empresas únicas representadas pelos membros do conselho
+  const empresasPorMembro = r.representantes.flatMap((v) =>
+    v.representante.empresas.map((e) => ({ ...e, membroNome: v.representante.nome, membroPapel: v.papel }))
+  );
+  const empresasUnicas = Array.from(
+    new Map(empresasPorMembro.map((e) => [e.empresa.id, e])).values()
+  );
+
   return (
     <div className="rounded-xl border border-gray-200 bg-white shadow-sm overflow-hidden">
       <div className="px-4 py-3 bg-gray-50 border-b border-gray-100 flex items-center gap-2">
-        <span className="rounded-full bg-gray-200 text-gray-600 px-2 py-0.5 text-xs font-medium">
-          {r.tipo === "comite" ? "Comitê" : "Conselho"}
-        </span>
         <span className={`shrink-0 rounded-full px-2 py-0.5 text-xs font-medium ${badgeTipoCons(r.tipo)}`}>
           {r.tipo === "comite" ? "Comitê" : "Conselho"}
         </span>
         <h3 className="font-semibold text-gray-900 text-sm flex-1 min-w-0 truncate">{r.nome}</h3>
-        <span className="text-xs text-gray-400 shrink-0">{empresas.length} empresa{empresas.length !== 1 ? "s" : ""}</span>
+        {empresasUnicas.length > 0 && (
+          <span className="shrink-0 text-xs text-orange-600 font-medium">
+            {empresasUnicas.length} empresa{empresasUnicas.length !== 1 ? "s" : ""} representada{empresasUnicas.length !== 1 ? "s" : ""}
+          </span>
+        )}
       </div>
-      <div className="px-4 py-3 space-y-2.5">
+      <div className="px-4 py-3 space-y-3">
+        {/* Membros com suas empresas */}
         <div>
-          <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-1.5">Membros</p>
+          <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-2">Membros</p>
           {r.representantes.length === 0 ? (
             <p className="text-xs text-gray-400 italic">Nenhum membro vinculado.</p>
           ) : (
-            <div className="flex flex-wrap gap-1.5">
+            <div className="space-y-1.5">
               {r.representantes.map((v) => (
-                <span key={v.id} className="inline-flex items-center gap-1 rounded-full bg-green-50 border border-green-100 px-2.5 py-0.5 text-xs text-green-700">
-                  <span className="font-medium">{v.representante.nome}</span>
-                  <span className="text-green-400">· {LABEL_PAPEL_CONS[v.papel] ?? v.papel}</span>
-                </span>
+                <div key={v.id} className="flex flex-wrap items-start gap-1.5">
+                  <span className="inline-flex items-center gap-1 rounded-full bg-green-50 border border-green-100 px-2.5 py-0.5 text-xs text-green-700 shrink-0">
+                    <span className="font-medium">{v.representante.nome}</span>
+                    <span className="text-green-400">· {LABEL_PAPEL_CONS[v.papel] ?? v.papel}</span>
+                  </span>
+                  {v.representante.empresas.length > 0 && (
+                    <>
+                      <span className="text-xs text-gray-300 self-center">→</span>
+                      {v.representante.empresas.map((e) => (
+                        <span key={e.id} className="inline-flex items-center gap-1 rounded-full bg-orange-50 border border-orange-100 px-2 py-0.5 text-xs text-orange-700">
+                          {e.empresa.razaoSocial}
+                          <span className="text-orange-300">· {LABEL_RELACAO[e.tipoRelacao] ?? e.tipoRelacao}</span>
+                        </span>
+                      ))}
+                    </>
+                  )}
+                </div>
               ))}
             </div>
           )}
         </div>
-        {empresas.length > 0 && (
-          <div>
-            <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-1.5">Empresas</p>
+
+        {/* Resumo de todas as empresas representadas */}
+        {empresasUnicas.length > 0 && (
+          <div className="rounded-lg bg-orange-50 border border-orange-100 px-3 py-2">
+            <p className="text-xs font-semibold text-orange-600 uppercase tracking-wide mb-1.5">
+              Empresas com representante neste {r.tipo === "comite" ? "comitê" : "conselho"}
+            </p>
             <div className="flex flex-wrap gap-1.5">
-              {empresas.map((e) => (
-                <span key={e.id} className="rounded-full bg-gray-100 border border-gray-200 px-2.5 py-0.5 text-xs text-gray-700">
-                  {e.razaoSocial}
+              {empresasUnicas.map((e) => (
+                <span key={e.empresa.id} className="rounded-full bg-white border border-orange-200 px-2.5 py-0.5 text-xs text-orange-800 font-medium">
+                  {e.empresa.razaoSocial}
                 </span>
               ))}
             </div>
