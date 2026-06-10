@@ -39,6 +39,10 @@ const includePresidentes = {
   empresas: { include: { empresa: { select: { id: true, razaoSocial: true, cnpj: true } } } },
   titularRef:  { include: { sindicato: { select: { id: true, nome: true } } } },
   suplenteRef: { include: { sindicato: { select: { id: true, nome: true } } } },
+  representantes: {
+    include: { representante: { select: { id: true, nome: true } } },
+    orderBy: { createdAt: "desc" as const },
+  },
 };
 
 export async function GET() {

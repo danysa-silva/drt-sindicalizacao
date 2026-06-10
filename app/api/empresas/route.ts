@@ -35,7 +35,14 @@ const empresaSchema = z.object({
 export async function GET() {
   const empresas = await prisma.empresa.findMany({
     orderBy: { razaoSocial: "asc" },
-    include: { sindicato: true },
+    include: {
+      sindicato: true,
+      representantes: {
+        where: { ativo: true },
+        include: { representante: { select: { id: true, nome: true } } },
+        orderBy: { createdAt: "desc" as const },
+      },
+    },
   });
   return Response.json(empresas);
 }

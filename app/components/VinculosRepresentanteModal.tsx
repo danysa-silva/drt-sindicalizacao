@@ -36,6 +36,12 @@ type VinculoEmpresa = {
 };
 
 const PAPEIS_SINDICATO = ["presidente", "vice-presidente", "diretor", "outro"];
+const LABEL_PAPEL_SINDICATO: Record<string, string> = {
+  "presidente":      "Presidente",
+  "vice-presidente": "Vice-Presidente",
+  "diretor":         "Diretor",
+  "outro":           "Outro",
+};
 const PAPEIS_CONSELHO  = ["titular", "suplente", "membro", "outro"];
 const TIPOS_RELACAO    = [
   "dono",
@@ -318,11 +324,13 @@ export default function VinculosRepresentanteModal({ representanteId, representa
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-gray-100">
-                    {vinculosSindicato.map((v) => (
+                    {[...vinculosSindicato]
+                      .sort((a, b) => PAPEIS_SINDICATO.indexOf(a.papel) - PAPEIS_SINDICATO.indexOf(b.papel))
+                      .map((v) => (
                       <tr key={v.id} className="hover:bg-gray-50">
                         <td className="px-4 py-2 font-medium text-gray-800">{v.sindicato.nome}</td>
                         <td className="px-4 py-2">
-                          <span className="rounded-full bg-blue-50 border border-blue-200 px-2 py-0.5 text-xs text-blue-700 capitalize">{v.papel}</span>
+                          <span className="rounded-full bg-blue-50 border border-blue-200 px-2 py-0.5 text-xs text-blue-700">{LABEL_PAPEL_SINDICATO[v.papel] ?? v.papel}</span>
                         </td>
                         <td className="px-4 py-2 text-gray-500 text-xs">{formatarData(v.dataInicio)}</td>
                         <td className="px-4 py-2 text-gray-500 text-xs">{formatarData(v.dataFim)}</td>
@@ -367,7 +375,7 @@ export default function VinculosRepresentanteModal({ representanteId, representa
                     onChange={(e) => setFormSind({ ...formSind, papel: e.target.value })}
                     className={inp}
                   >
-                    {PAPEIS_SINDICATO.map((p) => <option key={p} value={p}>{p}</option>)}
+                    {PAPEIS_SINDICATO.map((p) => <option key={p} value={p}>{LABEL_PAPEL_SINDICATO[p]}</option>)}
                   </select>
                   <input
                     type="date"

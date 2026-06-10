@@ -12,6 +12,14 @@ type Sindicato = {
   tipo: string;
 };
 
+type RepresentanteEmpresaVinculo = {
+  id: number;
+  representanteId: number;
+  tipoRelacao: string;
+  cargoNaEmpresa: string | null;
+  representante: { id: number; nome: string };
+};
+
 type Empresa = {
   id: number;
   cnpj: string;
@@ -27,6 +35,7 @@ type Empresa = {
   dataVencimento: string;
   status: string;
   observacoes: string | null;
+  representantes: RepresentanteEmpresaVinculo[];
 };
 
 function formatarCNPJ(cnpj: string) {
@@ -415,6 +424,21 @@ export default function ListaEmpresas() {
                 </div>
               </div>
             </div>
+
+            {selecionada.representantes?.length > 0 && (
+              <div className="rounded-lg border border-gray-200 bg-gray-50 px-4 py-3">
+                <p className="text-xs font-semibold uppercase tracking-wide text-gray-400 mb-2">Representantes</p>
+                <div className="space-y-1">
+                  {selecionada.representantes.map((r) => (
+                    <div key={r.id} className="flex items-center gap-2 text-sm">
+                      <span className="font-medium text-gray-800">{r.representante.nome}</span>
+                      <span className="text-xs text-gray-400 capitalize">{r.tipoRelacao.replace(/-/g, " ")}</span>
+                      {r.cargoNaEmpresa && <span className="text-xs text-gray-400">({r.cargoNaEmpresa})</span>}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
 
             {selecionada.observacoes && (
               <div className="rounded-lg border border-gray-200 bg-gray-50 px-4 py-3">
