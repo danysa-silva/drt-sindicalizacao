@@ -2,6 +2,7 @@ import { NextRequest } from "next/server";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { getUsuarioFromRequest, podeAlterar } from "@/lib/auth";
+import { registrarAuditoria } from "@/lib/auditoria";
 
 type Params = { params: Promise<{ id: string }> };
 
@@ -101,6 +102,17 @@ export async function PUT(request: NextRequest, { params }: Params) {
     },
   });
 
+  await registrarAuditoria({
+    entidadeNome: representante.nome,
+    empresaId: null,
+    usuarioId: usuario.id,
+    usuarioNome: usuario.nome,
+    acao: "edicao",
+    campo: "Representante",
+    valorAnterior: null,
+    valorNovo: null,
+  });
+
   return Response.json(representante);
 }
 
@@ -120,5 +132,17 @@ export async function DELETE(request: NextRequest, { params }: Params) {
   }
 
   await prisma.representante.delete({ where: { id: Number(id) } });
+
+  await registrarAuditoria({
+    entidadeNome: representante.nome,
+    empresaId: null,
+    usuarioId: usuario.id,
+    usuarioNome: usuario.nome,
+    acao: "exclusao",
+    campo: "Representante",
+    valorAnterior: null,
+    valorNovo: null,
+  });
+
   return Response.json({ ok: true });
 }

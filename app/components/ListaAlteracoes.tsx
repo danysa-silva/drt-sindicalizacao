@@ -14,9 +14,12 @@ type Alteracao = {
 };
 
 const ACOES: Record<string, { label: string; cor: string }> = {
-  criacao: { label: "Inclusão", cor: "bg-green-100 text-green-700 border border-green-200" },
-  edicao: { label: "Edição", cor: "bg-blue-100 text-blue-700 border border-blue-200" },
-  exclusao: { label: "Exclusão", cor: "bg-red-100 text-red-700 border border-red-200" },
+  criacao:           { label: "Inclusão",          cor: "bg-green-100 text-green-700 border border-green-200" },
+  edicao:            { label: "Edição",             cor: "bg-blue-100 text-blue-700 border border-blue-200" },
+  exclusao:          { label: "Exclusão",           cor: "bg-red-100 text-red-700 border border-red-200" },
+  vinculo_adicionado:{ label: "Vínculo Adicionado", cor: "bg-indigo-100 text-indigo-700 border border-indigo-200" },
+  vinculo_removido:  { label: "Vínculo Removido",   cor: "bg-orange-100 text-orange-700 border border-orange-200" },
+  consulta_excel:    { label: "Export Excel",        cor: "bg-gray-100 text-gray-600 border border-gray-200" },
 };
 
 function formatarDataHora(iso: string) {
@@ -72,6 +75,8 @@ export default function ListaAlteracoes() {
     criacao: alteracoes.filter((a) => a.acao === "criacao").length,
     edicao: alteracoes.filter((a) => a.acao === "edicao").length,
     exclusao: alteracoes.filter((a) => a.acao === "exclusao").length,
+    vinculos: alteracoes.filter((a) => a.acao === "vinculo_adicionado" || a.acao === "vinculo_removido").length,
+    excel: alteracoes.filter((a) => a.acao === "consulta_excel").length,
   };
 
   return (
@@ -93,6 +98,9 @@ export default function ListaAlteracoes() {
             <option value="criacao">Inclusões</option>
             <option value="edicao">Edições</option>
             <option value="exclusao">Exclusões</option>
+            <option value="vinculo_adicionado">Vínculos Adicionados</option>
+            <option value="vinculo_removido">Vínculos Removidos</option>
+            <option value="consulta_excel">Exportações Excel</option>
           </select>
         </div>
         <button
@@ -104,11 +112,13 @@ export default function ListaAlteracoes() {
       </div>
 
       {/* Resumo */}
-      <div className="mb-4 grid grid-cols-3 gap-3">
+      <div className="mb-4 grid grid-cols-2 sm:grid-cols-5 gap-3">
         {[
-          { label: "Inclusões", valor: contagem.criacao, cor: "text-green-700" },
-          { label: "Edições", valor: contagem.edicao, cor: "text-blue-700" },
-          { label: "Exclusões", valor: contagem.exclusao, cor: "text-red-700" },
+          { label: "Inclusões",   valor: contagem.criacao,  cor: "text-green-700" },
+          { label: "Edições",     valor: contagem.edicao,   cor: "text-blue-700" },
+          { label: "Exclusões",   valor: contagem.exclusao, cor: "text-red-700" },
+          { label: "Vínculos",    valor: contagem.vinculos, cor: "text-indigo-700" },
+          { label: "Excel Baixado", valor: contagem.excel,  cor: "text-gray-600" },
         ].map(({ label, valor, cor }) => (
           <div key={label} className="rounded-lg bg-white border border-gray-200 px-4 py-3 shadow-sm">
             <p className="text-xs text-gray-500">{label} (30 dias)</p>
@@ -117,51 +127,87 @@ export default function ListaAlteracoes() {
         ))}
       </div>
 
-      {/* Tabela */}
+      {/* Lista */}
       <div className="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm">
         {carregando ? (
           <div className="py-16 text-center text-sm text-gray-400">Carregando...</div>
         ) : filtradas.length === 0 ? (
           <div className="py-16 text-center text-sm text-gray-400">Nenhuma alteração encontrada nos últimos 30 dias.</div>
         ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead className="bg-gray-50 text-xs font-medium uppercase tracking-wide text-gray-500">
-                <tr>
-                  <th className="px-4 py-3 text-left">Data/Hora</th>
-                  <th className="px-4 py-3 text-left">Empresa</th>
-                  <th className="px-4 py-3 text-left">Usuário</th>
-                  <th className="px-4 py-3 text-left">Tipo</th>
-                  <th className="px-4 py-3 text-left">Campo</th>
-                  <th className="px-4 py-3 text-left">Antes</th>
-                  <th className="px-4 py-3 text-left">Depois</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-100">
-                {filtradas.map((a) => (
-                  <tr key={a.id} className="hover:bg-gray-50">
-                    <td className="px-4 py-3 text-xs text-gray-500 whitespace-nowrap">{formatarDataHora(a.createdAt)}</td>
-                    <td className="px-4 py-3 font-medium text-gray-900 max-w-[200px]">
-                      <div className="truncate" title={a.empresaNome}>{a.empresaNome}</div>
-                    </td>
-                    <td className="px-4 py-3 text-xs text-gray-600 whitespace-nowrap">{a.usuarioNome}</td>
-                    <td className="px-4 py-3">
-                      <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${ACOES[a.acao]?.cor ?? "bg-gray-100 text-gray-600"}`}>
-                        {ACOES[a.acao]?.label ?? a.acao}
-                      </span>
-                    </td>
-                    <td className="px-4 py-3 text-xs text-gray-500">{a.campo ?? "—"}</td>
-                    <td className="px-4 py-3 text-xs text-red-500 max-w-[140px]">
-                      <div className="truncate" title={a.valorAnterior ?? ""}>{a.valorAnterior ?? "—"}</div>
-                    </td>
-                    <td className="px-4 py-3 text-xs text-green-600 max-w-[140px]">
-                      <div className="truncate" title={a.valorNovo ?? ""}>{a.valorNovo ?? "—"}</div>
-                    </td>
+          <>
+            {/* Cards — mobile */}
+            <div className="sm:hidden divide-y divide-gray-100">
+              {filtradas.map((a) => (
+                <div key={a.id} className="px-4 py-3 space-y-1.5">
+                  <div className="flex items-center justify-between gap-2">
+                    <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${ACOES[a.acao]?.cor ?? "bg-gray-100 text-gray-600"}`}>
+                      {ACOES[a.acao]?.label ?? a.acao}
+                    </span>
+                    <span className="text-xs text-gray-400">{formatarDataHora(a.createdAt)}</span>
+                  </div>
+                  <p className="font-medium text-gray-900 text-sm leading-snug">{a.empresaNome}</p>
+                  <div className="flex items-center gap-2 text-xs text-gray-500">
+                    <span>{a.usuarioNome}</span>
+                    {a.campo && <><span>·</span><span>{a.campo}</span></>}
+                  </div>
+                  {(a.valorAnterior || a.valorNovo) && (
+                    <div className="flex flex-wrap gap-2 text-xs">
+                      {a.valorAnterior && (
+                        <span className="text-red-500 bg-red-50 rounded px-1.5 py-0.5 max-w-full truncate" title={a.valorAnterior}>
+                          − {a.valorAnterior}
+                        </span>
+                      )}
+                      {a.valorNovo && (
+                        <span className="text-green-600 bg-green-50 rounded px-1.5 py-0.5 max-w-full truncate" title={a.valorNovo}>
+                          + {a.valorNovo}
+                        </span>
+                      )}
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+
+            {/* Tabela — desktop */}
+            <div className="hidden sm:block overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead className="bg-gray-50 text-xs font-medium uppercase tracking-wide text-gray-500">
+                  <tr>
+                    <th className="px-4 py-3 text-left">Data/Hora</th>
+                    <th className="px-4 py-3 text-left">Entidade</th>
+                    <th className="px-4 py-3 text-left">Usuário</th>
+                    <th className="px-4 py-3 text-left">Tipo</th>
+                    <th className="px-4 py-3 text-left">Campo</th>
+                    <th className="px-4 py-3 text-left">Antes</th>
+                    <th className="px-4 py-3 text-left">Depois</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+                </thead>
+                <tbody className="divide-y divide-gray-100">
+                  {filtradas.map((a) => (
+                    <tr key={a.id} className="hover:bg-gray-50">
+                      <td className="px-4 py-3 text-xs text-gray-500 whitespace-nowrap">{formatarDataHora(a.createdAt)}</td>
+                      <td className="px-4 py-3 font-medium text-gray-900 max-w-[200px]">
+                        <div className="truncate" title={a.empresaNome}>{a.empresaNome}</div>
+                      </td>
+                      <td className="px-4 py-3 text-xs text-gray-600 whitespace-nowrap">{a.usuarioNome}</td>
+                      <td className="px-4 py-3">
+                        <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${ACOES[a.acao]?.cor ?? "bg-gray-100 text-gray-600"}`}>
+                          {ACOES[a.acao]?.label ?? a.acao}
+                        </span>
+                      </td>
+                      <td className="px-4 py-3 text-xs text-gray-500">{a.campo ?? "—"}</td>
+                      <td className="px-4 py-3 text-xs text-red-500 max-w-[140px]">
+                        <div className="truncate" title={a.valorAnterior ?? ""}>{a.valorAnterior ?? "—"}</div>
+                      </td>
+                      <td className="px-4 py-3 text-xs text-green-600 max-w-[140px]">
+                        <div className="truncate" title={a.valorNovo ?? ""}>{a.valorNovo ?? "—"}</div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </>
         )}
       </div>
 

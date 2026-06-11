@@ -1,21 +1,34 @@
 import { prisma } from "./prisma";
 
 type RegistroParams = {
-  empresaId: number | null;
-  empresaNome: string;
+  entidadeNome: string;
+  empresaId?: number | null;
   usuarioId: number | null;
   usuarioNome: string;
-  acao: "criacao" | "edicao" | "exclusao";
-  campo?: string;
+  acao: string;
+  campo?: string | null;
   valorAnterior?: string | null;
   valorNovo?: string | null;
 };
 
 export async function registrarAuditoria(params: RegistroParams) {
-  await prisma.historicoAlteracao.create({ data: params });
+  await prisma.historicoAlteracao.create({
+    data: {
+      empresaId: params.empresaId ?? null,
+      empresaNome: params.entidadeNome,
+      usuarioId: params.usuarioId,
+      usuarioNome: params.usuarioNome,
+      acao: params.acao,
+      campo: params.campo ?? null,
+      valorAnterior: params.valorAnterior ?? null,
+      valorNovo: params.valorNovo ?? null,
+    },
+  });
 }
 
-const LABELS: Record<string, string> = {
+// ── empresas ──────────────────────────────────────────────────────────────────
+
+const LABELS_EMPRESA: Record<string, string> = {
   razaoSocial: "Razão Social",
   cnpj: "CNPJ",
   cnae: "CNAE",
@@ -30,31 +43,33 @@ const LABELS: Record<string, string> = {
   observacoes: "Observações",
 };
 
-type EmpresaSnapshot = Record<string, string | number | null | undefined>;
+type Snapshot = Record<string, string | number | null | undefined>;
 
-export async function registrarEdicao(
+export async function registrarEdicaoEmpresa(
   empresaId: number,
   empresaNome: string,
   usuarioId: number | null,
   usuarioNome: string,
-  antes: EmpresaSnapshot,
-  depois: EmpresaSnapshot
+  antes: Snapshot,
+  depois: Snapshot
 ) {
-  const campos = Object.keys(LABELS);
-  for (const campo of campos) {
+  for (const campo of Object.keys(LABELS_EMPRESA)) {
     const vAntes = String(antes[campo] ?? "");
     const vDepois = String(depois[campo] ?? "");
     if (vAntes !== vDepois) {
       await registrarAuditoria({
+        entidadeNome: empresaNome,
         empresaId,
-        empresaNome,
         usuarioId,
         usuarioNome,
         acao: "edicao",
-        campo: LABELS[campo] ?? campo,
+        campo: LABELS_EMPRESA[campo] ?? campo,
         valorAnterior: vAntes || null,
         valorNovo: vDepois || null,
       });
     }
   }
 }
+
+// mantém compatibilidade com chamadas antigas
+export const registrarEdicao = registrarEdicaoEmpresa;

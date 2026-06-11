@@ -3,7 +3,6 @@
 import { useState, useEffect, useCallback } from "react";
 import Modal from "./Modal";
 import SindicatoForm from "./SindicatoForm";
-import EmpresasSindicatoModal from "./EmpresasSindicatoModal";
 import { useUsuario } from "./UserContext";
 
 type RepresentanteLite = { id: number; nome: string };
@@ -13,6 +12,17 @@ type RepresentanteVinculo = {
   representanteId: number;
   papel: string;
   representante: { id: number; nome: string };
+};
+
+type EmpresaSimples = {
+  id: number;
+  cnpj: string;
+  razaoSocial: string;
+  cnae: string | null;
+  perfil: string | null;
+  situacaoRFB: string | null;
+  afinidade: string | null;
+  status: string;
 };
 
 type Sindicato = {
@@ -48,6 +58,19 @@ function badgeTipo(tipo: string) {
     : "bg-orange-100 text-orange-700 border border-orange-200";
 }
 
+function badgeSituacaoRFB(s: string | null) {
+  if (!s) return "bg-gray-100 text-gray-500";
+  const u = s.toUpperCase();
+  if (u === "ATIVA") return "bg-green-100 text-green-700";
+  if (u === "SUSPENSA") return "bg-orange-100 text-orange-600";
+  if (u === "BAIXADA") return "bg-gray-100 text-gray-500";
+  return "bg-red-100 text-red-600";
+}
+
+function formatarCNPJ(cnpj: string) {
+  return cnpj.replace(/^(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})$/, "$1.$2.$3/$4-$5");
+}
+
 export default function ListaSindicatos() {
   const usuario = useUsuario();
   const podeEditar = usuario?.perfil === "admin" || usuario?.perfil === "editor";
@@ -58,10 +81,16 @@ export default function ListaSindicatos() {
   const [filtro, setFiltro] = useState("");
   const [filtroTipo, setFiltroTipo] = useState("todos");
   const [expandido, setExpandido] = useState<number | null>(null);
-  const [modal, setModal] = useState<"novo" | "editar" | "excluir" | "empresas" | null>(null);
+  const [modal, setModal] = useState<"novo" | "editar" | "excluir" | "membros" | null>(null);
   const [selecionado, setSelecionado] = useState<Sindicato | null>(null);
   const [carregando, setCarregando] = useState(true);
 
+  // Empresas por sindicato (carregadas sob demanda)
+  const [empresasCache, setEmpresasCache] = useState<Record<number, EmpresaSimples[]>>({});
+  const [carregandoEmpresas, setCarregandoEmpresas] = useState<number | null>(null);
+  const [filtroEmpresas, setFiltroEmpresas] = useState<Record<number, string>>({});
+
+  // Membros — estado do modal
   const [addRepId, setAddRepId] = useState("");
   const [addPapel, setAddPapel] = useState("presidente");
 
@@ -79,13 +108,28 @@ export default function ListaSindicatos() {
 
   useEffect(() => { carregar(); }, [carregar]);
 
-  function fecharModal() { setModal(null); setSelecionado(null); }
+  function fecharModal() { setModal(null); setSelecionado(null); setAddRepId(""); setAddPapel("presidente"); }
 
   async function confirmarExcluir() {
     if (!selecionado) return;
     await fetch(`/api/sindicatos/${selecionado.id}`, { method: "DELETE" });
     setModal(null);
     carregar();
+  }
+
+  async function expandirSindicato(sindicatoId: number) {
+    if (expandido === sindicatoId) {
+      setExpandido(null);
+      return;
+    }
+    setExpandido(sindicatoId);
+    if (!empresasCache[sindicatoId]) {
+      setCarregandoEmpresas(sindicatoId);
+      const res = await fetch(`/api/sindicatos/${sindicatoId}/empresas`);
+      const data = await res.json();
+      setEmpresasCache((prev) => ({ ...prev, [sindicatoId]: data }));
+      setCarregandoEmpresas(null);
+    }
   }
 
   async function adicionarMembro(sindicatoId: number) {
@@ -125,7 +169,7 @@ export default function ListaSindicatos() {
 
   return (
     <main className="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8">
-      {/* Ações e filtros */}
+      {/* Filtros */}
       <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center flex-1">
           <input
@@ -177,41 +221,55 @@ export default function ListaSindicatos() {
         <div className="space-y-2">
           {filtrados.map((s) => {
             const aberto = expandido === s.id;
-            const membrosOrdenados = [...s.representantes].sort(
-              (a, b) => PAPEIS_SINDICATO.indexOf(a.papel) - PAPEIS_SINDICATO.indexOf(b.papel)
-            );
+            const empresas = empresasCache[s.id] ?? [];
+            const termoEmp = filtroEmpresas[s.id] ?? "";
+            const empresasFiltradas = termoEmp
+              ? empresas.filter((e) =>
+                  e.razaoSocial.toLowerCase().includes(termoEmp.toLowerCase()) ||
+                  e.cnpj.includes(termoEmp.replace(/\D/g, ""))
+                )
+              : empresas;
 
             return (
               <div key={s.id} className="rounded-xl border border-gray-200 bg-white shadow-sm overflow-hidden">
+                {/* Cabeçalho */}
                 <div
                   className="flex items-center justify-between px-4 py-3 cursor-pointer hover:bg-gray-50"
-                  onClick={() => setExpandido(aberto ? null : s.id)}
+                  onClick={() => expandirSindicato(s.id)}
                 >
                   <div className="flex items-center gap-3 min-w-0">
                     <span className={`shrink-0 rounded-full px-2 py-0.5 text-xs font-medium capitalize ${badgeTipo(s.tipo)}`}>
                       {s.tipo === "patronal" ? "Patronal" : "Laboral"}
                     </span>
                     <span className="font-medium text-gray-900 text-sm truncate">{s.nome}</span>
-                    <button
-                      onClick={(e) => { e.stopPropagation(); setSelecionado(s); setModal("empresas"); }}
-                      className="shrink-0 text-xs text-gray-400 hover:text-blue-600 hover:underline"
-                    >
+                    <span className="shrink-0 text-xs text-gray-400">
                       {s._count.empresas} empresa{s._count.empresas !== 1 ? "s" : ""}
-                    </button>
+                    </span>
                     {s.representantes.length > 0 && (
-                      <span className="shrink-0 text-xs text-blue-500">
+                      <button
+                        onClick={(e) => { e.stopPropagation(); setSelecionado(s); setModal("membros"); }}
+                        className="shrink-0 text-xs text-blue-500 hover:text-blue-700 hover:underline"
+                      >
                         {s.representantes.length} membro{s.representantes.length !== 1 ? "s" : ""}
-                      </span>
+                      </button>
                     )}
                   </div>
                   <div className="flex items-center gap-3 shrink-0 ml-3">
                     {podeEditar && (
-                      <button
-                        onClick={(e) => { e.stopPropagation(); setSelecionado(s); setModal("editar"); }}
-                        className="text-blue-600 hover:underline text-xs"
-                      >
-                        Editar
-                      </button>
+                      <>
+                        <button
+                          onClick={(e) => { e.stopPropagation(); setSelecionado(s); setModal("membros"); }}
+                          className="text-blue-500 hover:underline text-xs hidden sm:inline"
+                        >
+                          Membros
+                        </button>
+                        <button
+                          onClick={(e) => { e.stopPropagation(); setSelecionado(s); setModal("editar"); }}
+                          className="text-blue-600 hover:underline text-xs"
+                        >
+                          Editar
+                        </button>
+                      </>
                     )}
                     {podeExcluir && (
                       <button
@@ -225,62 +283,83 @@ export default function ListaSindicatos() {
                   </div>
                 </div>
 
+                {/* Empresas expandidas */}
                 {aberto && (
-                  <div className="border-t border-gray-100 px-4 py-4 space-y-4">
-                    <div>
-                      <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">Membros</p>
-                      {membrosOrdenados.length > 0 ? (
-                        <div className="flex flex-wrap gap-1.5 mb-2">
-                          {membrosOrdenados.map((r) => (
-                            <span key={r.id} className="inline-flex items-center gap-1 rounded-full bg-blue-50 border border-blue-100 px-2.5 py-0.5 text-xs text-blue-700">
-                              <span className="font-medium">{r.representante.nome}</span>
-                              <span className="text-blue-400 ml-0.5">· {LABEL_PAPEL[r.papel] ?? r.papel}</span>
-                              {podeEditar && (
-                                <button
-                                  onClick={() => removerMembro(r.representanteId, r.id)}
-                                  className="ml-1 text-blue-300 hover:text-red-500 font-bold leading-none"
-                                  title="Remover"
-                                >
-                                  ×
-                                </button>
-                              )}
-                            </span>
-                          ))}
-                        </div>
-                      ) : (
-                        <p className="text-xs text-gray-400 mb-2">Nenhum membro vinculado.</p>
-                      )}
-                      {podeEditar && (
-                        <div className="flex gap-2">
-                          <select
-                            value={addRepId}
-                            onChange={(e) => setAddRepId(e.target.value)}
-                            className="flex-1 rounded-md border border-gray-300 px-2 py-1.5 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
-                          >
-                            <option value="">Adicionar representante...</option>
-                            {todosRepresentantes.map((r) => (
-                              <option key={r.id} value={r.id}>{r.nome}</option>
-                            ))}
-                          </select>
-                          <select
-                            value={addPapel}
-                            onChange={(e) => setAddPapel(e.target.value)}
-                            className="rounded-md border border-gray-300 px-2 py-1.5 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
-                          >
-                            {PAPEIS_SINDICATO.map((p) => (
-                              <option key={p} value={p}>{LABEL_PAPEL[p]}</option>
-                            ))}
-                          </select>
-                          <button
-                            onClick={() => adicionarMembro(s.id)}
-                            disabled={!addRepId}
-                            className="rounded-md bg-blue-700 px-3 py-1.5 text-xs font-medium text-white hover:bg-blue-800 disabled:opacity-40"
-                          >
-                            Adicionar
-                          </button>
-                        </div>
+                  <div className="border-t border-gray-100 px-4 py-4">
+                    <div className="flex items-center justify-between gap-3 mb-3">
+                      <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide">
+                        Empresas Vinculadas
+                        {empresas.length > 0 && <span className="ml-1 font-normal text-gray-400">({empresas.length})</span>}
+                      </p>
+                      {empresas.length > 4 && (
+                        <input
+                          value={termoEmp}
+                          onChange={(e) => setFiltroEmpresas((prev) => ({ ...prev, [s.id]: e.target.value }))}
+                          placeholder="Filtrar..."
+                          className="rounded-md border border-gray-300 px-2.5 py-1 text-xs focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 w-40"
+                          onClick={(e) => e.stopPropagation()}
+                        />
                       )}
                     </div>
+
+                    {carregandoEmpresas === s.id ? (
+                      <p className="text-xs text-gray-400 py-4 text-center">Carregando...</p>
+                    ) : empresas.length === 0 ? (
+                      <p className="text-xs text-gray-400 italic">Nenhuma empresa vinculada a este sindicato.</p>
+                    ) : empresasFiltradas.length === 0 ? (
+                      <p className="text-xs text-gray-400 italic">Nenhuma empresa encontrada para "{termoEmp}".</p>
+                    ) : (
+                      <>
+                        {/* Cards — mobile */}
+                        <div className="sm:hidden space-y-2">
+                          {empresasFiltradas.map((e) => (
+                            <div key={e.id} className="rounded-lg border border-gray-100 bg-gray-50 px-3 py-2">
+                              <p className="font-medium text-gray-900 text-sm">{e.razaoSocial}</p>
+                              <div className="flex flex-wrap items-center gap-2 mt-0.5 text-xs text-gray-500">
+                                <span className="font-mono">{formatarCNPJ(e.cnpj)}</span>
+                                {e.situacaoRFB && (
+                                  <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${badgeSituacaoRFB(e.situacaoRFB)}`}>
+                                    {e.situacaoRFB}
+                                  </span>
+                                )}
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+
+                        {/* Tabela — desktop */}
+                        <div className="hidden sm:block overflow-x-auto rounded-lg border border-gray-100">
+                          <table className="w-full text-sm">
+                            <thead className="bg-gray-50 text-xs font-medium uppercase tracking-wide text-gray-500">
+                              <tr>
+                                <th className="px-3 py-2 text-left">Razão Social</th>
+                                <th className="px-3 py-2 text-left">CNPJ</th>
+                                <th className="px-3 py-2 text-left">CNAE</th>
+                                <th className="px-3 py-2 text-left">Sit. RFB</th>
+                                <th className="px-3 py-2 text-left">Perfil</th>
+                              </tr>
+                            </thead>
+                            <tbody className="divide-y divide-gray-100">
+                              {empresasFiltradas.map((e) => (
+                                <tr key={e.id} className="hover:bg-gray-50">
+                                  <td className="px-3 py-2 font-medium text-gray-900 text-sm">{e.razaoSocial}</td>
+                                  <td className="px-3 py-2 font-mono text-xs text-gray-500">{formatarCNPJ(e.cnpj)}</td>
+                                  <td className="px-3 py-2 text-xs text-gray-500">{e.cnae || "—"}</td>
+                                  <td className="px-3 py-2">
+                                    {e.situacaoRFB ? (
+                                      <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${badgeSituacaoRFB(e.situacaoRFB)}`}>
+                                        {e.situacaoRFB}
+                                      </span>
+                                    ) : <span className="text-xs text-gray-400">—</span>}
+                                  </td>
+                                  <td className="px-3 py-2 text-xs text-gray-500">{e.perfil || "—"}</td>
+                                </tr>
+                              ))}
+                            </tbody>
+                          </table>
+                        </div>
+                      </>
+                    )}
                   </div>
                 )}
               </div>
@@ -293,12 +372,14 @@ export default function ListaSindicatos() {
         {filtrados.length} sindicato{filtrados.length !== 1 ? "s" : ""} exibido{filtrados.length !== 1 ? "s" : ""}
       </p>
 
+      {/* Modal: Novo */}
       {modal === "novo" && (
         <Modal titulo="Novo Sindicato" onFechar={fecharModal}>
           <SindicatoForm onSalvar={() => { fecharModal(); carregar(); }} onCancelar={fecharModal} />
         </Modal>
       )}
 
+      {/* Modal: Editar */}
       {modal === "editar" && selecionado && (
         <Modal titulo="Editar Sindicato" onFechar={fecharModal}>
           <SindicatoForm
@@ -312,12 +393,80 @@ export default function ListaSindicatos() {
         </Modal>
       )}
 
-      {modal === "empresas" && selecionado && (
-        <Modal titulo={`Empresas — ${selecionado.nome}`} onFechar={fecharModal} largo>
-          <EmpresasSindicatoModal sindicatoId={selecionado.id} nomeSindicato={selecionado.nome} onFechar={fecharModal} />
+      {/* Modal: Membros */}
+      {modal === "membros" && selecionado && (
+        <Modal titulo={`Membros — ${selecionado.nome}`} onFechar={fecharModal}>
+          <div className="space-y-4">
+            {(() => {
+              const membros = [...selecionado.representantes].sort(
+                (a, b) => PAPEIS_SINDICATO.indexOf(a.papel) - PAPEIS_SINDICATO.indexOf(b.papel)
+              );
+              return (
+                <>
+                  {membros.length > 0 ? (
+                    <div className="flex flex-wrap gap-1.5">
+                      {membros.map((r) => (
+                        <span key={r.id} className="inline-flex items-center gap-1 rounded-full bg-blue-50 border border-blue-100 px-2.5 py-0.5 text-xs text-blue-700">
+                          <span className="font-medium">{r.representante.nome}</span>
+                          <span className="text-blue-400 ml-0.5">· {LABEL_PAPEL[r.papel] ?? r.papel}</span>
+                          {podeEditar && (
+                            <button
+                              onClick={() => removerMembro(r.representanteId, r.id)}
+                              className="ml-1 text-blue-300 hover:text-red-500 font-bold leading-none"
+                              title="Remover"
+                            >
+                              ×
+                            </button>
+                          )}
+                        </span>
+                      ))}
+                    </div>
+                  ) : (
+                    <p className="text-sm text-gray-400 italic">Nenhum membro vinculado.</p>
+                  )}
+                  {podeEditar && (
+                    <div className="flex gap-2 pt-1">
+                      <select
+                        value={addRepId}
+                        onChange={(e) => setAddRepId(e.target.value)}
+                        className="flex-1 rounded-md border border-gray-300 px-2 py-1.5 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                      >
+                        <option value="">Adicionar representante...</option>
+                        {todosRepresentantes.map((r) => (
+                          <option key={r.id} value={r.id}>{r.nome}</option>
+                        ))}
+                      </select>
+                      <select
+                        value={addPapel}
+                        onChange={(e) => setAddPapel(e.target.value)}
+                        className="rounded-md border border-gray-300 px-2 py-1.5 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                      >
+                        {PAPEIS_SINDICATO.map((p) => (
+                          <option key={p} value={p}>{LABEL_PAPEL[p]}</option>
+                        ))}
+                      </select>
+                      <button
+                        onClick={() => adicionarMembro(selecionado.id)}
+                        disabled={!addRepId}
+                        className="rounded-md bg-blue-700 px-3 py-1.5 text-xs font-medium text-white hover:bg-blue-800 disabled:opacity-40"
+                      >
+                        Adicionar
+                      </button>
+                    </div>
+                  )}
+                </>
+              );
+            })()}
+            <div className="flex justify-end pt-1">
+              <button onClick={fecharModal} className="rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50">
+                Fechar
+              </button>
+            </div>
+          </div>
         </Modal>
       )}
 
+      {/* Modal: Excluir */}
       {modal === "excluir" && selecionado && (
         <Modal titulo="Confirmar Exclusão" onFechar={fecharModal}>
           <p className="text-sm text-gray-600 mb-2">

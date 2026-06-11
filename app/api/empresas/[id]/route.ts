@@ -127,7 +127,7 @@ export async function DELETE(request: NextRequest, { params }: Params) {
   if (!empresa) return Response.json({ error: "Empresa não encontrada" }, { status: 404 });
 
   await registrarAuditoria({
-    empresaId: null, empresaNome: empresa.razaoSocial,
+    empresaId: null, entidadeNome: empresa.razaoSocial,
     usuarioId: usuario.id, usuarioNome: usuario.nome,
     acao: "exclusao",
   });

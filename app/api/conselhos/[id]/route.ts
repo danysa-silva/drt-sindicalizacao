@@ -2,6 +2,7 @@ import { NextRequest } from "next/server";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { getUsuarioFromRequest, podeAlterar } from "@/lib/auth";
+import { registrarAuditoria } from "@/lib/auditoria";
 
 type Params = { params: Promise<{ id: string }> };
 
@@ -85,6 +86,18 @@ export async function PUT(request: NextRequest, { params }: Params) {
       email,
     },
   });
+
+  await registrarAuditoria({
+    entidadeNome: conselho.nome,
+    empresaId: null,
+    usuarioId: usuario.id,
+    usuarioNome: usuario.nome,
+    acao: "edicao",
+    campo: "Conselho",
+    valorAnterior: null,
+    valorNovo: null,
+  });
+
   return Response.json(conselho);
 }
 
@@ -98,6 +111,23 @@ export async function DELETE(request: NextRequest, { params }: Params) {
   }
 
   const { id } = await params;
+  const conselho = await prisma.conselho.findUnique({ where: { id: Number(id) } });
+  if (!conselho) {
+    return Response.json({ error: "Conselho não encontrado" }, { status: 404 });
+  }
+
   await prisma.conselho.delete({ where: { id: Number(id) } });
+
+  await registrarAuditoria({
+    entidadeNome: conselho.nome,
+    empresaId: null,
+    usuarioId: usuario.id,
+    usuarioNome: usuario.nome,
+    acao: "exclusao",
+    campo: "Conselho",
+    valorAnterior: null,
+    valorNovo: null,
+  });
+
   return Response.json({ ok: true });
 }

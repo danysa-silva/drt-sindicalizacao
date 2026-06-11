@@ -504,7 +504,19 @@ export default function ConsultaVinculos() {
               {resposta.total} resultado{resposta.total !== 1 ? "s" : ""} para <strong>"{busca}"</strong>
             </p>
             <button
-              onClick={() => exportarExcel(resposta, busca)}
+              onClick={async () => {
+                exportarExcel(resposta, busca);
+                await fetch("/api/alteracoes", {
+                  method: "POST",
+                  headers: { "Content-Type": "application/json" },
+                  body: JSON.stringify({
+                    entidadeNome: `Consulta: "${busca}" (${resposta.tipo})`,
+                    acao: "consulta_excel",
+                    campo: `tipo=${resposta.tipo}`,
+                    valorNovo: `${resposta.total} resultado(s)`,
+                  }),
+                });
+              }}
               className="inline-flex items-center gap-1.5 rounded-lg border border-green-600 bg-white px-3 py-1.5 text-sm font-medium text-green-700 hover:bg-green-50 transition"
             >
               <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">

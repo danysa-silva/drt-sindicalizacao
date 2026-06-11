@@ -2,6 +2,7 @@ import { NextRequest } from "next/server";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { getUsuarioFromRequest, podeAlterar } from "@/lib/auth";
+import { registrarAuditoria } from "@/lib/auditoria";
 
 type Params = { params: Promise<{ id: string }> };
 
@@ -77,6 +78,18 @@ export async function PUT(request: NextRequest, { params }: Params) {
       observacoes: observacoes ?? null,
     },
   });
+
+  await registrarAuditoria({
+    entidadeNome: sindicato.nome,
+    empresaId: null,
+    usuarioId: usuario.id,
+    usuarioNome: usuario.nome,
+    acao: "edicao",
+    campo: "Sindicato",
+    valorAnterior: null,
+    valorNovo: null,
+  });
+
   return Response.json(sindicato);
 }
 
@@ -90,6 +103,23 @@ export async function DELETE(request: NextRequest, { params }: Params) {
   }
 
   const { id } = await params;
+  const sindicato = await prisma.sindicato.findUnique({ where: { id: Number(id) } });
+  if (!sindicato) {
+    return Response.json({ error: "Sindicato não encontrado" }, { status: 404 });
+  }
+
   await prisma.sindicato.delete({ where: { id: Number(id) } });
+
+  await registrarAuditoria({
+    entidadeNome: sindicato.nome,
+    empresaId: null,
+    usuarioId: usuario.id,
+    usuarioNome: usuario.nome,
+    acao: "exclusao",
+    campo: "Sindicato",
+    valorAnterior: null,
+    valorNovo: null,
+  });
+
   return Response.json({ ok: true });
 }

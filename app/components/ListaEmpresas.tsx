@@ -106,6 +106,14 @@ export default function ListaEmpresas() {
 
   useEffect(() => { carregar(); }, [carregar]);
 
+  // Atualiza a lista automaticamente a cada 30 segundos quando nenhum modal está aberto
+  useEffect(() => {
+    const timer = setInterval(() => {
+      if (!modal) carregar();
+    }, 30_000);
+    return () => clearInterval(timer);
+  }, [carregar, modal]);
+
   function abrirVer(e: Empresa) { setSelecionada(e); setModal("ver"); }
   function abrirEditar(e: Empresa) { setSelecionada(e); setModal("editar"); }
   function abrirExcluir(e: Empresa) { setSelecionada(e); setModal("excluir"); }
@@ -227,54 +235,56 @@ export default function ListaEmpresas() {
   return (
     <main className="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8">
       {/* Ações e filtros */}
-      <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-center flex-1">
+      <div className="mb-4 flex flex-col gap-3">
+        <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
           <input
             value={filtro}
             onChange={(e) => setFiltro(e.target.value)}
             placeholder="Buscar por razão social, CNPJ, sindicato, CNAE..."
             className="flex-1 rounded-lg border border-gray-300 px-4 py-2 text-sm shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
           />
-          <select
-            value={filtroStatus}
-            onChange={(e) => setFiltroStatus(e.target.value)}
-            className="rounded-lg border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
-          >
-            <option value="todos">Todos os status</option>
-            <option value="ativo">Ativos</option>
-            <option value="inativo">Inativos</option>
-          </select>
-          <select
-            value={filtroSindicato}
-            onChange={(e) => setFiltroSindicato(e.target.value)}
-            className="rounded-lg border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 max-w-xs"
-          >
-            <option value="todos">Todos os sindicatos</option>
-            <option value="sem_sindicato">Sem sindicato</option>
-            {sindicatosDisponiveis.map((s) => (
-              <option key={s.id} value={s.id}>{s.nome}</option>
-            ))}
-          </select>
+          <div className="flex gap-2">
+            <select
+              value={filtroStatus}
+              onChange={(e) => setFiltroStatus(e.target.value)}
+              className="flex-1 sm:flex-none rounded-lg border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+            >
+              <option value="todos">Todos os status</option>
+              <option value="ativo">Ativos</option>
+              <option value="inativo">Inativos</option>
+            </select>
+            <select
+              value={filtroSindicato}
+              onChange={(e) => setFiltroSindicato(e.target.value)}
+              className="flex-1 sm:flex-none rounded-lg border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 sm:max-w-xs"
+            >
+              <option value="todos">Todos os sindicatos</option>
+              <option value="sem_sindicato">Sem sindicato</option>
+              {sindicatosDisponiveis.map((s) => (
+                <option key={s.id} value={s.id}>{s.nome}</option>
+              ))}
+            </select>
+          </div>
         </div>
-        <div className="flex gap-2">
+        <div className="flex gap-2 flex-wrap">
           {isAdmin && (
             <button
               onClick={() => setModal("importar")}
-              className="inline-flex items-center gap-1 rounded-lg border border-blue-300 bg-blue-50 px-3 py-2 text-sm font-medium text-blue-700 hover:bg-blue-100 transition"
+              className="flex-1 sm:flex-none inline-flex items-center justify-center gap-1 rounded-lg border border-blue-300 bg-blue-50 px-3 py-2 text-sm font-medium text-blue-700 hover:bg-blue-100 transition"
             >
               Importar CSV
             </button>
           )}
           <button
             onClick={exportarCSV}
-            className="inline-flex items-center gap-1 rounded-lg border border-green-600 bg-green-50 px-3 py-2 text-sm font-medium text-green-700 hover:bg-green-100 transition"
+            className="flex-1 sm:flex-none inline-flex items-center justify-center gap-1 rounded-lg border border-green-600 bg-green-50 px-3 py-2 text-sm font-medium text-green-700 hover:bg-green-100 transition"
           >
             ⬇ Exportar CSV
           </button>
           {isAdmin && (
             <button
               onClick={() => setModal("novo")}
-              className="inline-flex items-center gap-1 rounded-lg bg-blue-700 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-800 transition"
+              className="flex-1 sm:flex-none inline-flex items-center justify-center gap-1 rounded-lg bg-blue-700 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-800 transition"
             >
               + Nova Empresa
             </button>
@@ -283,7 +293,7 @@ export default function ListaEmpresas() {
       </div>
 
       {/* Resumo */}
-      <div className="mb-4 grid grid-cols-2 gap-3 sm:grid-cols-4">
+      <div className="mb-4 grid grid-cols-2 gap-3 sm:grid-cols-4 sm:gap-3">
         {[
           { label: "Total", valor: empresas.length, cor: "text-gray-800" },
           { label: "Ativos", valor: empresas.filter((e) => e.status === "ativo").length, cor: "text-green-700" },
@@ -297,75 +307,114 @@ export default function ListaEmpresas() {
         ))}
       </div>
 
-      {/* Tabela */}
+      {/* Lista */}
       <div className="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm">
         {carregando ? (
           <div className="py-16 text-center text-sm text-gray-400">Carregando...</div>
         ) : filtradas.length === 0 ? (
           <div className="py-16 text-center text-sm text-gray-400">Nenhuma empresa encontrada.</div>
         ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead className="bg-gray-50 text-xs font-medium uppercase tracking-wide text-gray-500">
-                <tr>
-                  <th className="px-4 py-3 text-left">CNPJ</th>
-                  <th className="px-4 py-3 text-left">Razão Social</th>
-                  <th className="px-4 py-3 text-left">Perfil / CNAE</th>
-                  <th className="px-4 py-3 text-left">Sindicato</th>
-                  <th className="px-4 py-3 text-left">Sit. RFB</th>
-                  <th className="px-4 py-3 text-left">Vencimento</th>
-                  <th className="px-4 py-3 text-left">Status DRT</th>
-                  <th className="px-4 py-3 text-right">Ações</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-100">
-                {filtradas.map((e) => (
-                  <tr key={e.id} className="hover:bg-gray-50 cursor-pointer" onDoubleClick={() => abrirVer(e)}>
-                    <td className="px-4 py-3 font-mono text-xs text-gray-600">{formatarCNPJ(e.cnpj)}</td>
-                    <td className="px-4 py-3 font-medium text-gray-900">
-                      <div>{e.razaoSocial}</div>
-                    </td>
-                    <td className="px-4 py-3 text-gray-600">
-                      {e.perfil && <div className="text-xs font-medium text-gray-700">{e.perfil}</div>}
-                      {e.cnae && <div className="text-xs text-gray-400">{e.cnae}{e.ramoAtividade ? ` — ${e.ramoAtividade}` : ""}</div>}
-                    </td>
-                    <td className="px-4 py-3">
-                      {e.sindicato ? (
-                        <div>
-                          <div className="text-xs text-gray-700">{e.sindicato.nome}</div>
-                          <span className="text-[10px] text-gray-400 capitalize">{e.sindicato.tipo}</span>
-                        </div>
-                      ) : <span className="text-gray-400 text-xs">—</span>}
-                    </td>
-                    <td className="px-4 py-3">
-                      <span className={`text-xs font-medium ${badgeSituacaoRFB(e.situacaoRFB)}`}>
-                        {e.situacaoRFB ?? "—"}
-                      </span>
-                    </td>
-                    <td className="px-4 py-3">
-                      <span className={vencida(e.dataVencimento) && e.status === "ativo" ? "text-orange-600 font-medium text-xs" : "text-gray-600 text-xs"}>
-                        {formatarData(e.dataVencimento)}
-                        {vencida(e.dataVencimento) && e.status === "ativo" && " ⚠"}
-                      </span>
-                    </td>
-                    <td className="px-4 py-3">
-                      <span className={`rounded-full px-2 py-0.5 text-xs font-medium capitalize ${badgeStatus(e.status)}`}>
-                        {e.status}
-                      </span>
-                    </td>
-                    <td className="px-4 py-3 text-right">
+          <>
+            {/* Cards — mobile */}
+            <div className="sm:hidden divide-y divide-gray-100">
+              {filtradas.map((e) => (
+                <div key={e.id} className="px-4 py-3 space-y-1" onClick={() => abrirVer(e)}>
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="min-w-0">
+                      <p className="font-semibold text-gray-900 text-sm leading-snug truncate">{e.razaoSocial}</p>
+                      <p className="font-mono text-xs text-gray-400">{formatarCNPJ(e.cnpj)}</p>
+                    </div>
+                    <span className={`shrink-0 rounded-full px-2 py-0.5 text-xs font-medium capitalize ${badgeStatus(e.status)}`}>
+                      {e.status}
+                    </span>
+                  </div>
+                  <div className="flex flex-wrap items-center gap-x-3 gap-y-0.5 text-xs text-gray-500">
+                    {e.sindicato && <span>{e.sindicato.nome}</span>}
+                    <span className={vencida(e.dataVencimento) && e.status === "ativo" ? "text-orange-600 font-medium" : ""}>
+                      Venc. {formatarData(e.dataVencimento)}{vencida(e.dataVencimento) && e.status === "ativo" ? " ⚠" : ""}
+                    </span>
+                    {e.situacaoRFB && (
+                      <span className={badgeSituacaoRFB(e.situacaoRFB)}>{e.situacaoRFB}</span>
+                    )}
+                  </div>
+                  {(isAdmin || podeExcluir) && (
+                    <div className="flex gap-3 pt-1">
                       {isAdmin && (
-                        <button onClick={(ev) => { ev.stopPropagation(); abrirEditar(e); }} className="mr-2 text-blue-600 hover:underline text-xs">Editar</button>
+                        <button onClick={(ev) => { ev.stopPropagation(); abrirEditar(e); }} className="text-blue-600 text-xs font-medium">Editar</button>
                       )}
                       {podeExcluir && (
-                        <button onClick={(ev) => { ev.stopPropagation(); abrirExcluir(e); }} className="text-red-500 hover:underline text-xs">Excluir</button>
+                        <button onClick={(ev) => { ev.stopPropagation(); abrirExcluir(e); }} className="text-red-500 text-xs font-medium">Excluir</button>
                       )}
-                    </td>
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+
+            {/* Tabela — desktop */}
+            <div className="hidden sm:block overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead className="bg-gray-50 text-xs font-medium uppercase tracking-wide text-gray-500">
+                  <tr>
+                    <th className="px-4 py-3 text-left">CNPJ</th>
+                    <th className="px-4 py-3 text-left">Razão Social</th>
+                    <th className="px-4 py-3 text-left">Perfil / CNAE</th>
+                    <th className="px-4 py-3 text-left">Sindicato</th>
+                    <th className="px-4 py-3 text-left">Sit. RFB</th>
+                    <th className="px-4 py-3 text-left">Vencimento</th>
+                    <th className="px-4 py-3 text-left">Status DRT</th>
+                    <th className="px-4 py-3 text-right">Ações</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+                </thead>
+                <tbody className="divide-y divide-gray-100">
+                  {filtradas.map((e) => (
+                    <tr key={e.id} className="hover:bg-gray-50 cursor-pointer" onDoubleClick={() => abrirVer(e)}>
+                      <td className="px-4 py-3 font-mono text-xs text-gray-600">{formatarCNPJ(e.cnpj)}</td>
+                      <td className="px-4 py-3 font-medium text-gray-900">
+                        <div>{e.razaoSocial}</div>
+                      </td>
+                      <td className="px-4 py-3 text-gray-600">
+                        {e.perfil && <div className="text-xs font-medium text-gray-700">{e.perfil}</div>}
+                        {e.cnae && <div className="text-xs text-gray-400">{e.cnae}{e.ramoAtividade ? ` — ${e.ramoAtividade}` : ""}</div>}
+                      </td>
+                      <td className="px-4 py-3">
+                        {e.sindicato ? (
+                          <div>
+                            <div className="text-xs text-gray-700">{e.sindicato.nome}</div>
+                            <span className="text-[10px] text-gray-400 capitalize">{e.sindicato.tipo}</span>
+                          </div>
+                        ) : <span className="text-gray-400 text-xs">—</span>}
+                      </td>
+                      <td className="px-4 py-3">
+                        <span className={`text-xs font-medium ${badgeSituacaoRFB(e.situacaoRFB)}`}>
+                          {e.situacaoRFB ?? "—"}
+                        </span>
+                      </td>
+                      <td className="px-4 py-3">
+                        <span className={vencida(e.dataVencimento) && e.status === "ativo" ? "text-orange-600 font-medium text-xs" : "text-gray-600 text-xs"}>
+                          {formatarData(e.dataVencimento)}
+                          {vencida(e.dataVencimento) && e.status === "ativo" && " ⚠"}
+                        </span>
+                      </td>
+                      <td className="px-4 py-3">
+                        <span className={`rounded-full px-2 py-0.5 text-xs font-medium capitalize ${badgeStatus(e.status)}`}>
+                          {e.status}
+                        </span>
+                      </td>
+                      <td className="px-4 py-3 text-right">
+                        {isAdmin && (
+                          <button onClick={(ev) => { ev.stopPropagation(); abrirEditar(e); }} className="mr-2 text-blue-600 hover:underline text-xs">Editar</button>
+                        )}
+                        {podeExcluir && (
+                          <button onClick={(ev) => { ev.stopPropagation(); abrirExcluir(e); }} className="text-red-500 hover:underline text-xs">Excluir</button>
+                        )}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </>
         )}
       </div>
 

@@ -2,6 +2,7 @@ import { NextRequest } from "next/server";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { getUsuarioFromRequest, podeAlterar } from "@/lib/auth";
+import { registrarAuditoria } from "@/lib/auditoria";
 
 const sindicatoSchema = z.object({
   nome: z
@@ -74,6 +75,17 @@ export async function POST(request: NextRequest) {
       validadeMandato: validadeMandato ?? null,
       observacoes: observacoes ?? null,
     },
+  });
+
+  await registrarAuditoria({
+    entidadeNome: sindicato.nome,
+    empresaId: null,
+    usuarioId: usuario.id,
+    usuarioNome: usuario.nome,
+    acao: "criacao",
+    campo: "Sindicato",
+    valorAnterior: null,
+    valorNovo: null,
   });
 
   return Response.json(sindicato, { status: 201 });

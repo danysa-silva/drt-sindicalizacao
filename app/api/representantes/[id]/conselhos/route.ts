@@ -2,6 +2,7 @@ import { NextRequest } from "next/server";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { getUsuarioFromRequest, podeAlterar } from "@/lib/auth";
+import { registrarAuditoria } from "@/lib/auditoria";
 
 type Params = { params: Promise<{ id: string }> };
 
@@ -83,6 +84,17 @@ export async function POST(request: NextRequest, { params }: Params) {
       papel,
     },
     include: { conselho: { select: { id: true, nome: true, tipo: true } } },
+  });
+
+  await registrarAuditoria({
+    entidadeNome: representante.nome,
+    empresaId: null,
+    usuarioId: usuario.id,
+    usuarioNome: usuario.nome,
+    acao: "vinculo_adicionado",
+    campo: "Vínculo Representante → Conselho",
+    valorAnterior: null,
+    valorNovo: `${conselho.nome} / ${papel}`,
   });
 
   return Response.json(vinculo, { status: 201 });

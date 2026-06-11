@@ -93,7 +93,7 @@ export async function POST(request: NextRequest) {
   });
 
   await registrarAuditoria({
-    empresaId: empresa.id, empresaNome: empresa.razaoSocial,
+    empresaId: empresa.id, entidadeNome: empresa.razaoSocial,
     usuarioId: usuario.id, usuarioNome: usuario.nome,
     acao: "criacao",
   });
