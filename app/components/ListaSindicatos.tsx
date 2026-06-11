@@ -79,7 +79,6 @@ export default function ListaSindicatos() {
   const [sindicatos, setSindicatos] = useState<Sindicato[]>([]);
   const [todosRepresentantes, setTodosRepresentantes] = useState<RepresentanteLite[]>([]);
   const [filtro, setFiltro] = useState("");
-  const [filtroTipo, setFiltroTipo] = useState("todos");
   const [expandido, setExpandido] = useState<number | null>(null);
   const [modal, setModal] = useState<"novo" | "editar" | "excluir" | "membros" | null>(null);
   const [selecionado, setSelecionado] = useState<Sindicato | null>(null);
@@ -161,11 +160,9 @@ export default function ListaSindicatos() {
     return true;
   }
 
-  const filtrados = sindicatos.filter((s) => {
-    const passaTexto = !filtro || corresponde(s.nome, filtro) || (s.cnpj?.includes(filtro.replace(/\D/g, "")) ?? false);
-    const passaTipo = filtroTipo === "todos" || s.tipo === filtroTipo;
-    return passaTexto && passaTipo;
-  });
+  const filtrados = sindicatos.filter((s) =>
+    !filtro || corresponde(s.nome, filtro) || (s.cnpj?.includes(filtro.replace(/\D/g, "")) ?? false)
+  );
 
   return (
     <main className="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8">
@@ -178,15 +175,6 @@ export default function ListaSindicatos() {
             placeholder="Buscar por nome ou CNPJ..."
             className="flex-1 rounded-lg border border-gray-300 px-4 py-2 text-sm shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
           />
-          <select
-            value={filtroTipo}
-            onChange={(e) => setFiltroTipo(e.target.value)}
-            className="rounded-lg border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
-          >
-            <option value="todos">Todos os tipos</option>
-            <option value="patronal">Patronal</option>
-            <option value="laboral">Laboral</option>
-          </select>
         </div>
         {podeEditar && (
           <button
@@ -199,11 +187,10 @@ export default function ListaSindicatos() {
       </div>
 
       {/* Resumo */}
-      <div className="mb-4 grid grid-cols-2 gap-3 sm:grid-cols-3">
+      <div className="mb-4 grid grid-cols-2 gap-3">
         {[
           { label: "Total", valor: sindicatos.length, cor: "text-gray-800" },
-          { label: "Patronais", valor: sindicatos.filter((s) => s.tipo === "patronal").length, cor: "text-indigo-700" },
-          { label: "Laborais", valor: sindicatos.filter((s) => s.tipo === "laboral").length, cor: "text-orange-600" },
+          { label: "Patronais", valor: sindicatos.length, cor: "text-indigo-700" },
         ].map(({ label, valor, cor }) => (
           <div key={label} className="rounded-lg bg-white border border-gray-200 px-4 py-3 shadow-sm">
             <p className="text-xs text-gray-500">{label}</p>
@@ -238,9 +225,6 @@ export default function ListaSindicatos() {
                   onClick={() => expandirSindicato(s.id)}
                 >
                   <div className="flex items-center gap-3 min-w-0">
-                    <span className={`shrink-0 rounded-full px-2 py-0.5 text-xs font-medium capitalize ${badgeTipo(s.tipo)}`}>
-                      {s.tipo === "patronal" ? "Patronal" : "Laboral"}
-                    </span>
                     <span className="font-medium text-gray-900 text-sm truncate">{s.nome}</span>
                     <span className="shrink-0 text-xs text-gray-400">
                       {s._count.empresas} empresa{s._count.empresas !== 1 ? "s" : ""}
