@@ -31,7 +31,12 @@ const sindicatoSchema = z.object({
   observacoes: z.string().nullish(),
 });
 
-export async function GET(_request: NextRequest, { params }: Params) {
+export async function GET(request: NextRequest, { params }: Params) {
+  const usuario = await getUsuarioFromRequest(request);
+  if (!usuario) {
+    return Response.json({ error: "Não autenticado" }, { status: 401 });
+  }
+
   const { id } = await params;
   const sindicato = await prisma.sindicato.findUnique({
     where: { id: Number(id) },

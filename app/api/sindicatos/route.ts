@@ -29,7 +29,12 @@ const sindicatoSchema = z.object({
   observacoes: z.string().nullish(),
 });
 
-export async function GET() {
+export async function GET(request: NextRequest) {
+  const usuario = await getUsuarioFromRequest(request);
+  if (!usuario) {
+    return Response.json({ error: "Não autenticado" }, { status: 401 });
+  }
+
   const sindicatos = await prisma.sindicato.findMany({
     orderBy: { nome: "asc" },
     include: {
