@@ -8,7 +8,6 @@ const LINKS = [
   { href: "/", label: "Empresas", label2: "Sindicalizadas" },
   { href: "/sindicatos", label: "Sindicatos", label2: "Filiados" },
   { href: "/conselhos", label: "Conselhos e Comitês", label2: "" },
-  { href: "/representantes", label: "Representantes", label2: "" },
   { href: "/vinculos", label: "Vínculos", label2: "" },
   { href: "/alteracoes", label: "Log de segurança", label2: "" },
 ];
@@ -50,16 +49,28 @@ export default function NavBar() {
                 </Link>
               ))}
               {usuario?.perfil === "admin" && (
-                <Link
-                  href="/usuarios"
-                  className={`rounded-md px-3 py-1.5 text-sm font-medium transition ${
-                    pathname === "/usuarios"
-                      ? "bg-white text-blue-800"
-                      : "text-blue-100 hover:bg-blue-700"
-                  }`}
-                >
-                  Usuários
-                </Link>
+                <>
+                  <Link
+                    href="/representantes"
+                    className={`rounded-md px-3 py-1.5 text-sm font-medium transition ${
+                      pathname === "/representantes"
+                        ? "bg-white text-blue-800"
+                        : "text-blue-100 hover:bg-blue-700"
+                    }`}
+                  >
+                    Representantes
+                  </Link>
+                  <Link
+                    href="/usuarios"
+                    className={`rounded-md px-3 py-1.5 text-sm font-medium transition ${
+                      pathname === "/usuarios"
+                        ? "bg-white text-blue-800"
+                        : "text-blue-100 hover:bg-blue-700"
+                    }`}
+                  >
+                    Usuários
+                  </Link>
+                </>
               )}
             </nav>
             {usuario && (
