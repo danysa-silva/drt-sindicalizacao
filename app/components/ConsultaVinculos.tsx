@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useUsuario } from "./UserContext";
 import * as XLSX from "xlsx";
 
 // ── tipos ─────────────────────────────────────────────────────────────────────
@@ -408,6 +409,8 @@ function exportarExcel(resposta: Resposta, busca: string) {
 // ── componente principal ──────────────────────────────────────────────────────
 
 export default function ConsultaVinculos() {
+  const usuario = useUsuario();
+  const isAdmin = usuario?.perfil === "admin";
   const [busca, setBusca] = useState("");
   const [tipoBusca, setTipoBusca] = useState("tudo");
   const [carregando, setCarregando] = useState(false);
@@ -450,7 +453,7 @@ export default function ConsultaVinculos() {
 
       <form onSubmit={buscar} className="mb-6 space-y-3">
         <div className="flex gap-2 flex-wrap">
-          {TIPOS_BUSCA.map((t) => (
+          {TIPOS_BUSCA.filter((t) => t.value !== "pessoa" || isAdmin).map((t) => (
             <button
               key={t.value}
               type="button"

@@ -14,6 +14,10 @@ export async function GET(request: NextRequest) {
     return Response.json({ error: "Informe ao menos 2 caracteres." }, { status: 400 });
   }
 
+  if (tipo === "pessoa" && usuario.perfil !== "admin") {
+    return Response.json({ error: "Acesso negado." }, { status: 403 });
+  }
+
   if (tipo === "pessoa") {
     const resultados = await prisma.representante.findMany({
       where: { nome: { contains: busca, mode: "insensitive" } },
