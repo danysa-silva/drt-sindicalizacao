@@ -516,7 +516,7 @@ export default function ConsultaVinculos() {
 
           {resposta.tipo === "tudo" && (
             <div className="space-y-6">
-              {resposta.pessoas.length > 0 && (
+              {isAdmin && resposta.pessoas.length > 0 && (
                 <SecaoResultados titulo={`Pessoas (${resposta.pessoas.length})`} cor="text-gray-500">
                   {resposta.pessoas.map((r) => <CartaoPessoa key={r.id} r={r} />)}
                 </SecaoResultados>

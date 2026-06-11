@@ -106,16 +106,19 @@ export async function GET(request: NextRequest) {
 
   if (tipo === "tudo") {
     const termoNumerico = busca.replace(/\D/g, "");
+    const pessoasPromise = usuario.perfil === "admin"
+      ? prisma.representante.findMany({
+          where: { nome: { contains: busca, mode: "insensitive" } },
+          include: {
+            sindicatos: { include: { sindicato: { select: { id: true, nome: true, tipo: true } } }, orderBy: { createdAt: "asc" } },
+            conselhos:  { include: { conselho:  { select: { id: true, nome: true, tipo: true } } }, orderBy: { createdAt: "asc" } },
+            empresas:   { where: { ativo: true }, include: { empresa: { select: { id: true, razaoSocial: true, cnpj: true } } }, orderBy: { createdAt: "asc" } },
+          },
+          orderBy: { nome: "asc" },
+        })
+      : Promise.resolve([]);
     const [pessoas, sindicatos, conselhos, empresas] = await Promise.all([
-      prisma.representante.findMany({
-        where: { nome: { contains: busca, mode: "insensitive" } },
-        include: {
-          sindicatos: { include: { sindicato: { select: { id: true, nome: true, tipo: true } } }, orderBy: { createdAt: "asc" } },
-          conselhos:  { include: { conselho:  { select: { id: true, nome: true, tipo: true } } }, orderBy: { createdAt: "asc" } },
-          empresas:   { where: { ativo: true }, include: { empresa: { select: { id: true, razaoSocial: true, cnpj: true } } }, orderBy: { createdAt: "asc" } },
-        },
-        orderBy: { nome: "asc" },
-      }),
+      pessoasPromise,
       prisma.sindicato.findMany({
         where: { nome: { contains: busca, mode: "insensitive" } },
         include: {
