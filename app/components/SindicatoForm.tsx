@@ -8,7 +8,6 @@ type SindicatoFormData = {
   nome: string;
   tipo: string;
   cnpj: string;
-  afinidadeFieam: string;
   validadeMandato: string;
   observacoes: string;
 };
@@ -18,7 +17,6 @@ type InitialSindicato = {
   nome?: string | null;
   tipo?: string | null;
   cnpj?: string | null;
-  afinidadeFieam?: string | null;
   validadeMandato?: string | null;
   observacoes?: string | null;
   presidenteRepresentanteId?: number | null;
@@ -40,7 +38,7 @@ function formatarCNPJ(valor: string) {
 }
 
 const VAZIO: SindicatoFormData = {
-  nome: "", tipo: "patronal", cnpj: "", afinidadeFieam: "", validadeMandato: "", observacoes: "",
+  nome: "", tipo: "patronal", cnpj: "", validadeMandato: "", observacoes: "",
 };
 
 export default function SindicatoForm({ inicial, onSalvar, onCancelar }: Props) {
@@ -64,7 +62,6 @@ export default function SindicatoForm({ inicial, onSalvar, onCancelar }: Props) 
         nome: inicial.nome ?? "",
         tipo: inicial.tipo ?? "patronal",
         cnpj: inicial.cnpj ? formatarCNPJ(inicial.cnpj) : "",
-        afinidadeFieam: inicial.afinidadeFieam ?? "",
         validadeMandato: inicial.validadeMandato ?? "",
         observacoes: inicial.observacoes ?? "",
       });
@@ -154,20 +151,9 @@ export default function SindicatoForm({ inicial, onSalvar, onCancelar }: Props) 
         </div>
       </div>
 
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-        <div>
-          <label className={lbl}>Afinidade com FIEAM</label>
-          <select name="afinidadeFieam" value={form.afinidadeFieam} onChange={handleChange} className={inp}>
-            <option value="">Não informado</option>
-            <option value="ALTO">Alto</option>
-            <option value="MÉDIO">Médio</option>
-            <option value="BAIXO">Baixo</option>
-          </select>
-        </div>
-        <div>
-          <label className={lbl}>Validade do Mandato</label>
-          <input name="validadeMandato" value={form.validadeMandato} onChange={handleChange} placeholder="Ex: 08/04/2023" className={inp} />
-        </div>
+      <div>
+        <label className={lbl}>Validade do Mandato</label>
+        <input name="validadeMandato" value={form.validadeMandato} onChange={handleChange} placeholder="Ex: 08/04/2023" className={inp} />
       </div>
 
       <div>

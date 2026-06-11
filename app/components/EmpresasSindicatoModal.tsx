@@ -9,7 +9,6 @@ type Empresa = {
   cnae: string | null;
   perfil: string | null;
   situacaoRFB: string | null;
-  afinidade: string | null;
   status: string;
 };
 
@@ -19,13 +18,6 @@ function formatarCNPJ(cnpj: string) {
   return cnpj.replace(/^(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})$/, "$1.$2.$3/$4-$5");
 }
 
-function badgeAfinidade(a: string | null) {
-  if (!a) return null;
-  const u = a.toUpperCase();
-  if (u === "ALTO") return "bg-blue-100 text-blue-700";
-  if (u === "MÉDIO" || u === "MEDIO") return "bg-yellow-100 text-yellow-700";
-  return "bg-red-100 text-red-600";
-}
 
 export default function EmpresasSindicatoModal({ sindicatoId, nomeSindicato, onFechar }: Props) {
   const [empresas, setEmpresas] = useState<Empresa[]>([]);
@@ -81,32 +73,23 @@ export default function EmpresasSindicatoModal({ sindicatoId, nomeSindicato, onF
                 <th className="px-4 py-2 text-left">CNPJ</th>
                 <th className="px-4 py-2 text-left">CNAE</th>
                 <th className="px-4 py-2 text-left">Situação RFB</th>
-                <th className="px-4 py-2 text-left">Afinidade</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100">
-              {filtradas.map((e) => {
-                const afBadge = badgeAfinidade(e.afinidade);
-                return (
-                  <tr key={e.id} className="hover:bg-gray-50">
-                    <td className="px-4 py-2 font-medium text-gray-900">{e.razaoSocial}</td>
-                    <td className="px-4 py-2 font-mono text-xs text-gray-500">{formatarCNPJ(e.cnpj)}</td>
-                    <td className="px-4 py-2 text-xs text-gray-500">{e.cnae || "—"}</td>
-                    <td className="px-4 py-2 text-xs">
-                      {e.situacaoRFB ? (
-                        <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${e.situacaoRFB.toUpperCase() === "ATIVA" ? "bg-green-100 text-green-700" : e.situacaoRFB.toUpperCase() === "SUSPENSA" ? "bg-orange-100 text-orange-600" : e.situacaoRFB.toUpperCase() === "BAIXADA" ? "bg-gray-100 text-gray-500" : "bg-red-100 text-red-600"}`}>
-                          {e.situacaoRFB}
-                        </span>
-                      ) : <span className="text-gray-400">—</span>}
-                    </td>
-                    <td className="px-4 py-2">
-                      {afBadge && e.afinidade ? (
-                        <span className={`rounded-full px-2 py-0.5 text-xs font-medium uppercase ${afBadge}`}>{e.afinidade}</span>
-                      ) : <span className="text-xs text-gray-400">—</span>}
-                    </td>
-                  </tr>
-                );
-              })}
+              {filtradas.map((e) => (
+                <tr key={e.id} className="hover:bg-gray-50">
+                  <td className="px-4 py-2 font-medium text-gray-900">{e.razaoSocial}</td>
+                  <td className="px-4 py-2 font-mono text-xs text-gray-500">{formatarCNPJ(e.cnpj)}</td>
+                  <td className="px-4 py-2 text-xs text-gray-500">{e.cnae || "—"}</td>
+                  <td className="px-4 py-2 text-xs">
+                    {e.situacaoRFB ? (
+                      <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${e.situacaoRFB.toUpperCase() === "ATIVA" ? "bg-green-100 text-green-700" : e.situacaoRFB.toUpperCase() === "SUSPENSA" ? "bg-orange-100 text-orange-600" : e.situacaoRFB.toUpperCase() === "BAIXADA" ? "bg-gray-100 text-gray-500" : "bg-red-100 text-red-600"}`}>
+                        {e.situacaoRFB}
+                      </span>
+                    ) : <span className="text-gray-400">—</span>}
+                  </td>
+                </tr>
+              ))}
             </tbody>
           </table>
         )}

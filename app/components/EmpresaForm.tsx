@@ -12,7 +12,6 @@ type EmpresaFormData = {
   ramoAtividade: string;
   perfil: string;
   situacaoRFB: string;
-  afinidade: string;
   sindicatoId: string;
   dataSindicalizacao: string;
   dataVencimento: string;
@@ -29,7 +28,6 @@ type InitialEmpresa = {
   ramoAtividade?: string | null;
   perfil?: string | null;
   situacaoRFB?: string | null;
-  afinidade?: string | null;
   sindicatoId?: number | null;
   sindicato?: Sindicato | null;
   dataSindicalizacao?: string | null;
@@ -55,7 +53,7 @@ function formatarCNPJ(valor: string) {
 
 const CAMPOS_VAZIOS: EmpresaFormData = {
   cnpj: "", tipoUnidade: "", razaoSocial: "", cnae: "", ramoAtividade: "", perfil: "",
-  situacaoRFB: "", afinidade: "", sindicatoId: "",
+  situacaoRFB: "", sindicatoId: "",
   dataSindicalizacao: "", dataVencimento: "", status: "ativo", observacoes: "",
 };
 
@@ -88,7 +86,6 @@ export default function EmpresaForm({ inicial, onSalvar, onCancelar }: Props) {
         ramoAtividade: inicial.ramoAtividade ?? "",
         perfil: inicial.perfil ?? "",
         situacaoRFB: inicial.situacaoRFB ?? "",
-        afinidade: inicial.afinidade ?? "",
         sindicatoId: inicial.sindicatoId ? String(inicial.sindicatoId) : "",
         dataSindicalizacao: inicial.dataSindicalizacao
           ? new Date(inicial.dataSindicalizacao).toISOString().split("T")[0]
@@ -224,24 +221,13 @@ export default function EmpresaForm({ inicial, onSalvar, onCancelar }: Props) {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-        <div>
-          <label className={lbl}>CNAE</label>
-          <input name="cnae" value={form.cnae} onChange={handleChange} placeholder="Ex: 1113-5/01" className={inp} />
-        </div>
-        <div>
-          <label className={lbl}>Afinidade FIEAM</label>
-          <select name="afinidade" value={form.afinidade} onChange={handleChange} className={inp}>
-            <option value="">Não informado</option>
-            <option value="ALTO">Alto</option>
-            <option value="MÉDIO">Médio</option>
-            <option value="BAIXO">Baixo</option>
-          </select>
-        </div>
+      <div>
+        <label className={lbl}>CNAE</label>
+        <input name="cnae" value={form.cnae} onChange={handleChange} placeholder="Ex: 1113-5/01" className={inp} />
       </div>
 
       <div>
-        <label className={lbl}>Sindicato Vinculado</label>
+        <label className={lbl}>Sindicato Vinculado *</label>
         <input
           type="text"
           value={filtroSindicato}
@@ -249,7 +235,7 @@ export default function EmpresaForm({ inicial, onSalvar, onCancelar }: Props) {
           placeholder="Pesquisar sindicato..."
           className={`${inp} mb-1`}
         />
-        <select name="sindicatoId" value={form.sindicatoId} onChange={handleChange} className={inp}>
+        <select name="sindicatoId" value={form.sindicatoId} onChange={handleChange} required className={inp}>
           <option value="">Selecione um sindicato...</option>
           {sindicatos
             .filter((s) => !filtroSindicato || s.nome.toLowerCase().includes(filtroSindicato.toLowerCase()))
