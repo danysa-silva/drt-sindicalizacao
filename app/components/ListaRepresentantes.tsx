@@ -47,6 +47,14 @@ export default function ListaRepresentantes() {
 
   useEffect(() => { carregar(); }, [carregar]);
 
+  // Auto-refresh a cada 30 segundos enquanto nenhum modal estiver aberto
+  useEffect(() => {
+    const timer = setInterval(() => {
+      if (!modal) carregar();
+    }, 30_000);
+    return () => clearInterval(timer);
+  }, [carregar, modal]);
+
   function abrirNovo() {
     setForm(FORM_VAZIO);
     setSelecionado(null);
