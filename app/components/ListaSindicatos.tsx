@@ -80,7 +80,7 @@ export default function ListaSindicatos() {
   const [todosRepresentantes, setTodosRepresentantes] = useState<RepresentanteLite[]>([]);
   const [filtro, setFiltro] = useState("");
   const [expandido, setExpandido] = useState<number | null>(null);
-  const [modal, setModal] = useState<"novo" | "editar" | "excluir" | null>(null);
+  const [modal, setModal] = useState<"novo" | "editar" | "excluir" | "membros" | null>(null);
   const [selecionado, setSelecionado] = useState<Sindicato | null>(null);
   const [carregando, setCarregando] = useState(true);
 
@@ -231,11 +231,12 @@ export default function ListaSindicatos() {
                     <span className="shrink-0 text-xs text-gray-400">
                       {s._count.empresas} empresa{s._count.empresas !== 1 ? "s" : ""}
                     </span>
-                    {s.representantes.length > 0 && (
-                      <span className="shrink-0 text-xs text-gray-400">
-                        {s.representantes.length} membro{s.representantes.length !== 1 ? "s" : ""}
-                      </span>
-                    )}
+                    <button
+                      onClick={(e) => { e.stopPropagation(); setSelecionado(s); setModal("membros"); }}
+                      className="shrink-0 text-xs text-blue-500 hover:text-blue-700 hover:underline"
+                    >
+                      {s.representantes.length} membro{s.representantes.length !== 1 ? "s" : ""}
+                    </button>
                   </div>
                   <div className="flex items-center gap-3 shrink-0 ml-3">
                     {podeEditar && (
@@ -258,68 +259,9 @@ export default function ListaSindicatos() {
                   </div>
                 </div>
 
-                {/* Conteúdo expandido */}
+                {/* Empresas expandidas */}
                 {aberto && (
-                  <div className="border-t border-gray-100 px-4 py-4 space-y-5">
-
-                    {/* Membros */}
-                    <div>
-                      <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">Membros</p>
-                      {s.representantes.length > 0 ? (
-                        <div className="flex flex-wrap gap-1.5 mb-2">
-                          {[...s.representantes]
-                            .sort((a, b) => PAPEIS_SINDICATO.indexOf(a.papel) - PAPEIS_SINDICATO.indexOf(b.papel))
-                            .map((r) => (
-                              <span key={r.id} className="inline-flex items-center gap-1 rounded-full bg-blue-50 border border-blue-100 px-2.5 py-0.5 text-xs text-blue-700">
-                                <span className="font-medium">{r.representante.nome}</span>
-                                <span className="text-blue-400 ml-0.5">· {LABEL_PAPEL[r.papel] ?? r.papel}</span>
-                                {podeEditar && (
-                                  <button
-                                    onClick={() => removerMembro(r.representanteId, r.id)}
-                                    className="ml-1 text-blue-300 hover:text-red-500 font-bold leading-none"
-                                    title="Remover"
-                                  >×</button>
-                                )}
-                              </span>
-                            ))}
-                        </div>
-                      ) : (
-                        <p className="text-xs text-gray-400 mb-2">Nenhum membro vinculado.</p>
-                      )}
-                      {podeEditar && (
-                        <div className="flex gap-2">
-                          <select
-                            value={addRepId}
-                            onChange={(e) => setAddRepId(e.target.value)}
-                            className="flex-1 rounded-md border border-gray-300 px-2 py-1.5 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
-                          >
-                            <option value="">Adicionar representante...</option>
-                            {todosRepresentantes.map((r) => (
-                              <option key={r.id} value={r.id}>{r.nome}</option>
-                            ))}
-                          </select>
-                          <select
-                            value={addPapel}
-                            onChange={(e) => setAddPapel(e.target.value)}
-                            className="rounded-md border border-gray-300 px-2 py-1.5 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
-                          >
-                            {PAPEIS_SINDICATO.map((p) => (
-                              <option key={p} value={p}>{LABEL_PAPEL[p]}</option>
-                            ))}
-                          </select>
-                          <button
-                            onClick={() => adicionarMembro(s.id)}
-                            disabled={!addRepId}
-                            className="rounded-md bg-blue-700 px-3 py-1.5 text-xs font-medium text-white hover:bg-blue-800 disabled:opacity-40"
-                          >
-                            Adicionar
-                          </button>
-                        </div>
-                      )}
-                    </div>
-
-                    {/* Empresas */}
-                    <div>
+                  <div className="border-t border-gray-100 px-4 py-4">
                     <div className="flex items-center justify-between gap-3 mb-3">
                       <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide">
                         Empresas Vinculadas
@@ -394,7 +336,6 @@ export default function ListaSindicatos() {
                         </div>
                       </>
                     )}
-                    </div>{/* fim Empresas */}
                   </div>
                 )}
               </div>
@@ -425,6 +366,70 @@ export default function ListaSindicatos() {
             onSalvar={() => { fecharModal(); carregar(); }}
             onCancelar={fecharModal}
           />
+        </Modal>
+      )}
+
+      {/* Modal: Membros */}
+      {modal === "membros" && selecionado && (
+        <Modal titulo={`Membros — ${selecionado.nome}`} onFechar={fecharModal}>
+          <div className="space-y-4">
+            {selecionado.representantes.length > 0 ? (
+              <div className="flex flex-wrap gap-1.5">
+                {[...selecionado.representantes]
+                  .sort((a, b) => PAPEIS_SINDICATO.indexOf(a.papel) - PAPEIS_SINDICATO.indexOf(b.papel))
+                  .map((r) => (
+                    <span key={r.id} className="inline-flex items-center gap-1 rounded-full bg-blue-50 border border-blue-100 px-2.5 py-0.5 text-xs text-blue-700">
+                      <span className="font-medium">{r.representante.nome}</span>
+                      <span className="text-blue-400 ml-0.5">· {LABEL_PAPEL[r.papel] ?? r.papel}</span>
+                      {podeEditar && (
+                        <button
+                          onClick={() => removerMembro(r.representanteId, r.id)}
+                          className="ml-1 text-blue-300 hover:text-red-500 font-bold leading-none"
+                          title="Remover"
+                        >×</button>
+                      )}
+                    </span>
+                  ))}
+              </div>
+            ) : (
+              <p className="text-sm text-gray-400 italic">Nenhum membro vinculado.</p>
+            )}
+            {podeEditar && (
+              <div className="flex gap-2 pt-1">
+                <select
+                  value={addRepId}
+                  onChange={(e) => setAddRepId(e.target.value)}
+                  className="flex-1 rounded-md border border-gray-300 px-2 py-1.5 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                >
+                  <option value="">Adicionar representante...</option>
+                  {todosRepresentantes.map((r) => (
+                    <option key={r.id} value={r.id}>{r.nome}</option>
+                  ))}
+                </select>
+                <select
+                  value={addPapel}
+                  onChange={(e) => setAddPapel(e.target.value)}
+                  className="rounded-md border border-gray-300 px-2 py-1.5 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                >
+                  {PAPEIS_SINDICATO.map((p) => (
+                    <option key={p} value={p}>{LABEL_PAPEL[p]}</option>
+                  ))}
+                </select>
+                <button
+                  onClick={() => adicionarMembro(selecionado.id)}
+                  disabled={!addRepId}
+                  className="rounded-md bg-blue-700 px-3 py-1.5 text-xs font-medium text-white hover:bg-blue-800 disabled:opacity-40"
+                >
+                  Adicionar
+                </button>
+              </div>
+            )}
+            <div className="flex justify-end pt-1">
+              <button onClick={fecharModal} className="rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50">
+                Fechar
+              </button>
+            </div>
+          </div>
         </Modal>
       )}
 
