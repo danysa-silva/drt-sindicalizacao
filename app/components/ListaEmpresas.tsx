@@ -267,14 +267,7 @@ export default function ListaEmpresas() {
           </div>
         </div>
         <div className="flex gap-2 flex-wrap">
-          {isAdmin && (
-            <button
-              onClick={() => setModal("importar")}
-              className="flex-1 sm:flex-none inline-flex items-center justify-center gap-1 rounded-lg border border-blue-300 bg-blue-50 px-3 py-2 text-sm font-medium text-blue-700 hover:bg-blue-100 transition"
-            >
-              Importar CSV
-            </button>
-          )}
+
           <button
             onClick={exportarCSV}
             className="flex-1 sm:flex-none inline-flex items-center justify-center gap-1 rounded-lg border border-green-600 bg-green-50 px-3 py-2 text-sm font-medium text-green-700 hover:bg-green-100 transition"
