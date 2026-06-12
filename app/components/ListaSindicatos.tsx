@@ -296,9 +296,41 @@ export default function ListaSindicatos() {
                   </div>
                 </div>
 
-                {/* Empresas expandidas */}
+                {/* Conteúdo expandido */}
                 {aberto && (
-                  <div className="border-t border-gray-100 px-4 py-4">
+                  <div className="border-t border-gray-100 px-4 py-4 space-y-4">
+
+                    {/* Membros (somente leitura — gerenciar via botão "X membros") */}
+                    <div>
+                      <div className="flex items-center gap-2 mb-2">
+                        <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Membros</p>
+                        {podeEditar && (
+                          <button
+                            onClick={() => { setSelecionado(s); setModal("membros"); }}
+                            className="text-xs text-blue-500 hover:underline"
+                          >
+                            Gerenciar
+                          </button>
+                        )}
+                      </div>
+                      {s.representantes.length > 0 ? (
+                        <div className="flex flex-wrap gap-1.5">
+                          {[...s.representantes]
+                            .sort((a, b) => PAPEIS_SINDICATO.indexOf(a.papel) - PAPEIS_SINDICATO.indexOf(b.papel))
+                            .map((r) => (
+                              <span key={r.id} className="inline-flex items-center gap-1 rounded-full bg-blue-50 border border-blue-100 px-2.5 py-0.5 text-xs text-blue-700">
+                                <span className="font-medium">{r.representante.nome}</span>
+                                <span className="text-blue-400 ml-0.5">· {LABEL_PAPEL[r.papel] ?? r.papel}</span>
+                              </span>
+                            ))}
+                        </div>
+                      ) : (
+                        <p className="text-xs text-gray-400 italic">Nenhum membro vinculado.</p>
+                      )}
+                    </div>
+
+                    {/* Empresas */}
+                    <div>
                     <div className="flex items-center justify-between gap-3 mb-3">
                       <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide">
                         Empresas Vinculadas
@@ -373,6 +405,7 @@ export default function ListaSindicatos() {
                         </div>
                       </>
                     )}
+                    </div>{/* fim Empresas */}
                   </div>
                 )}
               </div>
