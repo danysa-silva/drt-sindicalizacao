@@ -82,7 +82,7 @@ function formatarCNPJ(cnpj: string) {
   return cnpj.replace(/^(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})$/, "$1.$2.$3/$4-$5");
 }
 function badgeTipoSind(tipo: string) {
-  return tipo === "patronal"
+  return tipo === "interno"
     ? "bg-indigo-50 text-indigo-700 border border-indigo-200"
     : "bg-orange-50 text-orange-700 border border-orange-200";
 }
@@ -158,7 +158,7 @@ function CartaoSindicato({ r }: { r: ResultadoSindicato }) {
       <div className="px-4 py-3 bg-gray-50 border-b border-gray-100 flex items-center gap-2">
         <span className="rounded-full bg-gray-200 text-gray-600 px-2 py-0.5 text-xs font-medium">Sindicato</span>
         <span className={`shrink-0 rounded-full px-2 py-0.5 text-xs font-medium capitalize ${badgeTipoSind(r.tipo)}`}>
-          Patronal
+          {r.tipo === "interno" ? "Interno" : r.tipo === "externo" ? "Externo" : r.tipo}
         </span>
         <h3 className="font-semibold text-gray-900 text-sm flex-1 min-w-0 truncate">{r.nome}</h3>
         <span className="text-xs text-gray-400 shrink-0">{r._count.empresas} empresa{r._count.empresas !== 1 ? "s" : ""}</span>

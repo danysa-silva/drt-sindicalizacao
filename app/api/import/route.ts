@@ -133,7 +133,7 @@ export async function POST(request: NextRequest) {
       if (sindicatoNome) {
         let sindicato = await prisma.sindicato.findUnique({ where: { nome: sindicatoNome } });
         if (!sindicato) {
-          sindicato = await prisma.sindicato.create({ data: { nome: sindicatoNome, tipo: "patronal" } });
+          sindicato = await prisma.sindicato.create({ data: { nome: sindicatoNome, tipo: "externo" } });
         }
         sindicatoId = sindicato.id;
       }

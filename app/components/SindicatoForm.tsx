@@ -143,7 +143,7 @@ export default function SindicatoForm({ inicial, onSalvar, onCancelar }: Props) 
           <label className={lbl}>Tipo *</label>
           <select name="tipo" value={form.tipo} onChange={handleChange} required className={inp}>
             <option value="externo">Externo</option>
-            <option value="patronal">Patronal</option>
+            <option value="interno">Interno</option>
           </select>
         </div>
         <div>

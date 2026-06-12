@@ -11,7 +11,7 @@ const sindicatoSchema = z.object({
     .string({ error: "Nome do sindicato é obrigatório" })
     .trim()
     .min(1, { message: "Nome do sindicato não pode ser vazio" }),
-  tipo: z.string().optional().nullable().transform((v) => (v == null || v === "" ? "patronal" : v)),
+  tipo: z.string().optional().nullable().transform((v) => (v == null || v === "" ? "externo" : v)),
   cnpj: z
     .string()
     .nullish()

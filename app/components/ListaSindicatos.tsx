@@ -53,7 +53,7 @@ const LABEL_PAPEL: Record<string, string> = {
 };
 
 function badgeTipo(tipo: string) {
-  return tipo === "patronal"
+  return tipo === "interno"
     ? "bg-indigo-100 text-indigo-700 border border-indigo-200"
     : "bg-orange-100 text-orange-700 border border-orange-200";
 }
