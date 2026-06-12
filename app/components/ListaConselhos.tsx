@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
+import Link from "next/link";
 import Modal from "./Modal";
 import { useUsuario } from "./UserContext";
 
@@ -376,35 +377,43 @@ export default function ListaConselhos() {
                         <p className="text-xs text-gray-400 mb-2">Nenhum membro vinculado.</p>
                       )}
                       {podeEditar && (
-                        <div className="flex gap-2">
-                          <select
-                            value={addRepId}
-                            onChange={(e) => setAddRepId(e.target.value)}
-                            className="flex-1 rounded-md border border-gray-300 px-2 py-1.5 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
-                          >
-                            <option value="">Adicionar representante...</option>
-                            {todosRepresentantes.map((r) => (
-                              <option key={r.id} value={r.id}>{r.nome}</option>
-                            ))}
-                          </select>
-                          <select
-                            value={addPapelConselho}
-                            onChange={(e) => setAddPapelConselho(e.target.value)}
-                            className="rounded-md border border-gray-300 px-2 py-1.5 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
-                          >
-                            <option value="titular">Titular</option>
-                            <option value="suplente">Suplente</option>
-                            <option value="membro">Membro</option>
-                            <option value="outro">Outro</option>
-                          </select>
-                          <button
-                            onClick={() => adicionarMembro(c.id)}
-                            disabled={!addRepId}
-                            className="rounded-md bg-blue-700 px-3 py-1.5 text-xs font-medium text-white hover:bg-blue-800 disabled:opacity-40"
-                          >
-                            Adicionar
-                          </button>
-                        </div>
+                        <>
+                          <div className="flex gap-2">
+                            <select
+                              value={addRepId}
+                              onChange={(e) => setAddRepId(e.target.value)}
+                              className="flex-1 rounded-md border border-gray-300 px-2 py-1.5 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                            >
+                              <option value="">Adicionar representante...</option>
+                              {todosRepresentantes.map((r) => (
+                                <option key={r.id} value={r.id}>{r.nome}</option>
+                              ))}
+                            </select>
+                            <select
+                              value={addPapelConselho}
+                              onChange={(e) => setAddPapelConselho(e.target.value)}
+                              className="rounded-md border border-gray-300 px-2 py-1.5 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                            >
+                              <option value="titular">Titular</option>
+                              <option value="suplente">Suplente</option>
+                              <option value="membro">Membro</option>
+                              <option value="outro">Outro</option>
+                            </select>
+                            <button
+                              onClick={() => adicionarMembro(c.id)}
+                              disabled={!addRepId}
+                              className="rounded-md bg-blue-700 px-3 py-1.5 text-xs font-medium text-white hover:bg-blue-800 disabled:opacity-40"
+                            >
+                              Adicionar
+                            </button>
+                          </div>
+                          <p className="text-xs text-gray-400 mt-1">
+                            Não encontrou?{" "}
+                            <Link href="/representantes" target="_blank" className="text-blue-500 hover:underline">
+                              Cadastrar novo representante
+                            </Link>
+                          </p>
+                        </>
                       )}
                     </div>
 
@@ -548,6 +557,12 @@ export default function ListaConselhos() {
                   + Adicionar
                 </button>
               </div>
+              <p className="text-xs text-gray-400">
+                Não encontrou?{" "}
+                <Link href="/representantes" target="_blank" className="text-blue-500 hover:underline">
+                  Cadastrar novo representante
+                </Link>
+              </p>
             </div>
 
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
