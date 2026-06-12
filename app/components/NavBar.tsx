@@ -8,7 +8,6 @@ import { useUsuario } from "./UserContext";
 const LINKS = [
   { href: "/",           label: "Empresas Sindicalizadas" },
   { href: "/sindicatos", label: "Sindicatos Filiados" },
-  { href: "/vinculos",   label: "Vínculos" },
 ];
 
 export default function NavBar() {
@@ -26,7 +25,7 @@ export default function NavBar() {
   if (pathname === "/login" || pathname === "/cadastro") return null;
 
   const editorLinks = (usuario?.perfil === "admin" || usuario?.perfil === "editor")
-    ? [{ href: "/conselhos", label: "Conselhos e Comitês" }]
+    ? [{ href: "/conselhos", label: "Conselhos e Comitês" }, { href: "/vinculos", label: "Vínculos" }]
     : [];
   const adminLinks = usuario?.perfil === "admin"
     ? [{ href: "/alteracoes", label: "Log de Segurança" }, { href: "/representantes", label: "Representantes" }, { href: "/usuarios", label: "Usuários" }]
