@@ -38,7 +38,7 @@ function formatarCNPJ(valor: string) {
 }
 
 const VAZIO: SindicatoFormData = {
-  nome: "", tipo: "patronal", cnpj: "", validadeMandato: "", observacoes: "",
+  nome: "", tipo: "externo", cnpj: "", validadeMandato: "", observacoes: "",
 };
 
 export default function SindicatoForm({ inicial, onSalvar, onCancelar }: Props) {
@@ -60,7 +60,7 @@ export default function SindicatoForm({ inicial, onSalvar, onCancelar }: Props) 
     if (inicial) {
       setForm({
         nome: inicial.nome ?? "",
-        tipo: inicial.tipo ?? "patronal",
+        tipo: inicial.tipo ?? "externo",
         cnpj: inicial.cnpj ? formatarCNPJ(inicial.cnpj) : "",
         validadeMandato: inicial.validadeMandato ?? "",
         observacoes: inicial.observacoes ?? "",
@@ -142,8 +142,8 @@ export default function SindicatoForm({ inicial, onSalvar, onCancelar }: Props) 
         <div>
           <label className={lbl}>Tipo *</label>
           <select name="tipo" value={form.tipo} onChange={handleChange} required className={inp}>
-            <option value="patronal">Patronal</option>
             <option value="externo">Externo</option>
+            <option value="patronal">Patronal</option>
           </select>
         </div>
         <div>
