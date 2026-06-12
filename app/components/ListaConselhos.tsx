@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import Link from "next/link";
 import Modal from "./Modal";
 import { useUsuario } from "./UserContext";
 
@@ -91,6 +90,12 @@ export default function ListaConselhos() {
 
   const [addEmpresaId, setAddEmpresaId] = useState<string>("");
   const [carregando, setCarregando] = useState(true);
+
+  // modal de cadastro rápido de representante
+  const [modalNovoRep, setModalNovoRep] = useState(false);
+  const [novoRepForm, setNovoRepForm] = useState({ nome: "", cpf: "", email: "", telefone: "", observacoes: "" });
+  const [novoRepErro, setNovoRepErro] = useState("");
+  const [novoRepSalvando, setNovoRepSalvando] = useState(false);
   const [erro, setErro] = useState("");
   const [salvando, setSalvando] = useState(false);
 
@@ -261,6 +266,39 @@ export default function ListaConselhos() {
     carregar();
   }
 
+  async function salvarNovoRepresentante(e: React.FormEvent) {
+    e.preventDefault();
+    setNovoRepErro("");
+    setNovoRepSalvando(true);
+    const res = await fetch("/api/representantes", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        nome: novoRepForm.nome,
+        cpf: novoRepForm.cpf || null,
+        email: novoRepForm.email || null,
+        telefone: novoRepForm.telefone || null,
+        observacoes: novoRepForm.observacoes || null,
+      }),
+    });
+    if (!res.ok) {
+      const data = await res.json();
+      setNovoRepErro(data.error ?? "Erro ao salvar.");
+      setNovoRepSalvando(false);
+      return;
+    }
+    const novo = await res.json();
+    // recarrega lista e pré-seleciona o novo representante
+    const rr = await fetch("/api/representantes");
+    const lista = await rr.json();
+    setTodosRepresentantes(Array.isArray(lista) ? lista : []);
+    setAddRepId(String(novo.id));
+    setAddModalRepId(String(novo.id));
+    setNovoRepForm({ nome: "", cpf: "", email: "", telefone: "", observacoes: "" });
+    setModalNovoRep(false);
+    setNovoRepSalvando(false);
+  }
+
   const filtrados = conselhos.filter((c) =>
     !filtro || c.nome.toLowerCase().includes(filtro.toLowerCase())
   );
@@ -409,9 +447,9 @@ export default function ListaConselhos() {
                           </div>
                           <p className="text-xs text-gray-400 mt-1">
                             Não encontrou?{" "}
-                            <Link href="/representantes" target="_blank" className="text-blue-500 hover:underline">
+                            <button type="button" onClick={() => setModalNovoRep(true)} className="text-blue-500 hover:underline">
                               Cadastrar novo representante
-                            </Link>
+                            </button>
                           </p>
                         </>
                       )}
@@ -559,9 +597,9 @@ export default function ListaConselhos() {
               </div>
               <p className="text-xs text-gray-400">
                 Não encontrou?{" "}
-                <Link href="/representantes" target="_blank" className="text-blue-500 hover:underline">
+                <button type="button" onClick={() => setModalNovoRep(true)} className="text-blue-500 hover:underline">
                   Cadastrar novo representante
-                </Link>
+                </button>
               </p>
             </div>
 
@@ -609,6 +647,75 @@ export default function ListaConselhos() {
             <button onClick={fecharModal} className="rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50">Cancelar</button>
             <button onClick={excluirConselho} className="rounded-md bg-red-600 px-4 py-2 text-sm font-medium text-white hover:bg-red-700">Excluir</button>
           </div>
+        </Modal>
+      )}
+
+      {/* Modal: Cadastro rápido de representante */}
+      {modalNovoRep && (
+        <Modal titulo="Novo Representante" onFechar={() => { setModalNovoRep(false); setNovoRepErro(""); setNovoRepForm({ nome: "", cpf: "", email: "", telefone: "", observacoes: "" }); }}>
+          <form onSubmit={salvarNovoRepresentante} className="space-y-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Nome *</label>
+              <input
+                value={novoRepForm.nome}
+                onChange={(e) => setNovoRepForm({ ...novoRepForm, nome: e.target.value })}
+                required
+                placeholder="Nome completo"
+                className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none"
+              />
+            </div>
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">CPF</label>
+                <input
+                  value={novoRepForm.cpf}
+                  onChange={(e) => setNovoRepForm({ ...novoRepForm, cpf: e.target.value })}
+                  placeholder="000.000.000-00"
+                  className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">E-mail</label>
+                <input
+                  type="email"
+                  value={novoRepForm.email}
+                  onChange={(e) => setNovoRepForm({ ...novoRepForm, email: e.target.value })}
+                  placeholder="email@exemplo.com"
+                  className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Telefone</label>
+                <input
+                  value={novoRepForm.telefone}
+                  onChange={(e) => setNovoRepForm({ ...novoRepForm, telefone: e.target.value })}
+                  placeholder="(92) 90000-0000"
+                  className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none"
+                />
+              </div>
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Observações</label>
+              <textarea
+                value={novoRepForm.observacoes}
+                onChange={(e) => setNovoRepForm({ ...novoRepForm, observacoes: e.target.value })}
+                rows={2}
+                placeholder="Informações adicionais..."
+                className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none"
+              />
+            </div>
+            {novoRepErro && (
+              <p className="text-sm text-red-600 rounded-md bg-red-50 border border-red-200 px-3 py-2">{novoRepErro}</p>
+            )}
+            <div className="flex justify-end gap-3 pt-1">
+              <button type="button" onClick={() => { setModalNovoRep(false); setNovoRepErro(""); }} className="rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50">
+                Cancelar
+              </button>
+              <button type="submit" disabled={novoRepSalvando} className="rounded-md bg-blue-700 px-4 py-2 text-sm font-medium text-white hover:bg-blue-800 disabled:opacity-50">
+                {novoRepSalvando ? "Salvando..." : "Cadastrar"}
+              </button>
+            </div>
+          </form>
         </Modal>
       )}
     </main>
