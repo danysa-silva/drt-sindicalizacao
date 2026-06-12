@@ -249,12 +249,12 @@ export default function EmpresaForm({ inicial, onSalvar, onCancelar }: Props) {
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         <div>
-          <label className={lbl}>Data de Sindicalização *</label>
-          <input type="date" name="dataSindicalizacao" value={form.dataSindicalizacao} onChange={handleChange} required className={inp} />
+          <label className={lbl}>Data de Sindicalização</label>
+          <input type="date" name="dataSindicalizacao" value={form.dataSindicalizacao} onChange={handleChange} className={inp} />
         </div>
         <div>
-          <label className={lbl}>Data de Vencimento *</label>
-          <input type="date" name="dataVencimento" value={form.dataVencimento} onChange={handleChange} required className={inp} />
+          <label className={lbl}>Data de Desfiliação</label>
+          <input type="date" name="dataVencimento" value={form.dataVencimento} onChange={handleChange} className={inp} />
         </div>
       </div>
 

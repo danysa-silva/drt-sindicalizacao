@@ -17,11 +17,15 @@ const empresaSchema = z.object({
     .int()
     .positive({ message: "sindicatoId deve ser um número válido" }),
   dataSindicalizacao: z
-    .string({ error: "Data de sindicalização é obrigatória" })
-    .refine((v) => !isNaN(new Date(v).getTime()), { message: "Data de sindicalização inválida" }),
+    .string()
+    .nullish()
+    .refine((v) => !v || !isNaN(new Date(v).getTime()), { message: "Data de sindicalização inválida" })
+    .transform((v) => (v && v.trim() !== "" ? v : null)),
   dataVencimento: z
-    .string({ error: "Data de vencimento é obrigatória" })
-    .refine((v) => !isNaN(new Date(v).getTime()), { message: "Data de vencimento inválida" }),
+    .string()
+    .nullish()
+    .refine((v) => !v || !isNaN(new Date(v).getTime()), { message: "Data de desfiliação inválida" })
+    .transform((v) => (v && v.trim() !== "" ? v : null)),
   tipoUnidade: z.string().nullish(),
   cnae: z.string().nullish(),
   ramoAtividade: z.string().nullish(),
@@ -84,8 +88,8 @@ export async function POST(request: NextRequest) {
       situacaoRFB: situacaoRFB ?? null,
       afinidade: afinidade ?? null,
       sindicatoId,
-      dataSindicalizacao: new Date(dataSindicalizacao),
-      dataVencimento: new Date(dataVencimento),
+      dataSindicalizacao: dataSindicalizacao ? new Date(dataSindicalizacao) : new Date(),
+      dataVencimento: dataVencimento ? new Date(dataVencimento) : new Date(new Date().setFullYear(new Date().getFullYear() + 1)),
       status,
       observacoes: observacoes ?? null,
     },
