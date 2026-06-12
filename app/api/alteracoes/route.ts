@@ -8,6 +8,9 @@ export async function GET(request: NextRequest) {
   if (!usuario) {
     return Response.json({ error: "Não autenticado" }, { status: 401 });
   }
+  if (usuario.perfil !== "admin") {
+    return Response.json({ error: "Acesso negado" }, { status: 403 });
+  }
 
   const { searchParams } = new URL(request.url);
   const acao = searchParams.get("acao");

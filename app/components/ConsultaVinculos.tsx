@@ -410,7 +410,7 @@ function exportarExcel(resposta: Resposta, busca: string) {
 
 export default function ConsultaVinculos() {
   const usuario = useUsuario();
-  const isAdmin = usuario?.perfil === "admin";
+  const isAdmin = usuario?.perfil === "admin" || usuario?.perfil === "editor";
   const [busca, setBusca] = useState("");
   const [tipoBusca, setTipoBusca] = useState("tudo");
   const [carregando, setCarregando] = useState(false);

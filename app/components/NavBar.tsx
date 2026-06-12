@@ -10,7 +10,6 @@ const LINKS = [
   { href: "/sindicatos", label: "Sindicatos Filiados" },
   { href: "/conselhos",  label: "Conselhos e Comitês" },
   { href: "/vinculos",   label: "Vínculos" },
-  { href: "/alteracoes", label: "Log de Segurança" },
 ];
 
 export default function NavBar() {
@@ -28,7 +27,7 @@ export default function NavBar() {
   if (pathname === "/login" || pathname === "/cadastro") return null;
 
   const adminLinks = usuario?.perfil === "admin"
-    ? [{ href: "/representantes", label: "Representantes" }, { href: "/usuarios", label: "Usuários" }]
+    ? [{ href: "/alteracoes", label: "Log de Segurança" }, { href: "/representantes", label: "Representantes" }, { href: "/usuarios", label: "Usuários" }]
     : [];
   const todosLinks = [...LINKS, ...adminLinks];
 
