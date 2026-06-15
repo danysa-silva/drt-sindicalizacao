@@ -456,9 +456,10 @@ export default function ListaEmpresas() {
                 <div className="space-y-1">
                   <Row label="Sindicato" valor={selecionada.sindicato?.nome} />
                   <Row label="Tipo" valor={selecionada.sindicato?.tipo} classe="capitalize" />
+                  <Row label="Responsável" valor={selecionada.representantes?.find((r) => r.tipoRelacao === "responsavel")?.representante.nome} />
                   <Row label="Sindicalizado em" valor={formatarData(selecionada.dataSindicalizacao)} />
                   <Row
-                    label="Vencimento"
+                    label="Desfiliação"
                     valor={
                       formatarData(selecionada.dataVencimento) +
                       (vencida(selecionada.dataVencimento) && selecionada.status === "ativo" ? " ⚠ Vencido" : "")
@@ -519,7 +520,10 @@ export default function ListaEmpresas() {
       {modal === "editar" && selecionada && (
         <Modal titulo="Editar Empresa" onFechar={fecharModal}>
           <EmpresaForm
-            inicial={selecionada}
+            inicial={{
+              ...selecionada,
+              responsavelRepresentanteId: selecionada.representantes?.find((r) => r.tipoRelacao === "responsavel")?.representanteId ?? null,
+            }}
             onSalvar={() => { fecharModal(); carregar(); }}
             onCancelar={fecharModal}
           />
