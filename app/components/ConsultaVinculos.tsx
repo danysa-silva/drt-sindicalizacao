@@ -181,7 +181,7 @@ function CartaoSindicato({ r }: { r: ResultadoSindicato }) {
                   <span className="font-medium">{v.representante.nome}</span>
                   <span className="text-blue-400">· {LABEL_PAPEL_SIND[v.papel] ?? v.papel}</span>
                 </span>
-                {v.representante.empresas.length > 0 && (
+                {(v.representante.empresas?.length ?? 0) > 0 && (
                   <>
                     <span className="text-xs text-gray-300 self-center">→</span>
                     {v.representante.empresas.map((e) => (
@@ -236,7 +236,7 @@ function CartaoConselho({ r }: { r: ResultadoConselho }) {
                     <span className="font-medium">{v.representante.nome}</span>
                     <span className="text-green-400">· {LABEL_PAPEL_CONS[v.papel] ?? v.papel}</span>
                   </span>
-                  {v.representante.empresas.length > 0 && (
+                  {(v.representante.empresas?.length ?? 0) > 0 && (
                     <>
                       <span className="text-xs text-gray-300 self-center">→</span>
                       {v.representante.empresas.map((e) => (

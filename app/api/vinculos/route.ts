@@ -137,7 +137,25 @@ export async function GET(request: NextRequest) {
       prisma.sindicato.findMany({
         where: { nome: { contains: busca, mode: "insensitive" } },
         include: {
-          representantes: { include: { representante: { select: { id: true, nome: true } } }, orderBy: { createdAt: "asc" } },
+          representantes: {
+              include: {
+                representante: {
+                  select: {
+                    id: true,
+                    nome: true,
+                    empresas: {
+                      where: { ativo: true },
+                      select: {
+                        id: true,
+                        tipoRelacao: true,
+                        empresa: { select: { id: true, razaoSocial: true } },
+                      },
+                    },
+                  },
+                },
+              },
+              orderBy: { createdAt: "asc" },
+            },
           _count: { select: { empresas: true } },
         },
         orderBy: { nome: "asc" },
