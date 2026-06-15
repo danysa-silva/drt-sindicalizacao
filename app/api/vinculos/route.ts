@@ -14,7 +14,7 @@ export async function GET(request: NextRequest) {
     return Response.json({ error: "Informe ao menos 2 caracteres." }, { status: 400 });
   }
 
-  if (tipo === "pessoa" && usuario.perfil !== "admin" && usuario.perfil !== "editor") {
+  if (tipo === "pessoa" && usuario.perfil !== "admin") {
     return Response.json({ error: "Acesso negado." }, { status: 403 });
   }
 
@@ -106,7 +106,7 @@ export async function GET(request: NextRequest) {
 
   if (tipo === "tudo") {
     const termoNumerico = busca.replace(/\D/g, "");
-    const pessoasPromise = (usuario.perfil === "admin" || usuario.perfil === "editor")
+    const pessoasPromise = (usuario.perfil === "admin")
       ? prisma.representante.findMany({
           where: { nome: { contains: busca, mode: "insensitive" } },
           include: {
