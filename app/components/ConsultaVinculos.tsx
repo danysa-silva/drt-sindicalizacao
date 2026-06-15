@@ -18,7 +18,13 @@ type ResultadoPessoa = {
 };
 type ResultadoSindicato = {
   id: number; nome: string; tipo: string;
-  representantes: { id: number; papel: string; representante: { nome: string } }[];
+  representantes: {
+    id: number; papel: string;
+    representante: {
+      nome: string;
+      empresas: { id: number; tipoRelacao: string; empresa: { id: number; razaoSocial: string } }[];
+    };
+  }[];
   _count: { empresas: number };
 };
 type ResultadoConselho = {
@@ -168,12 +174,24 @@ function CartaoSindicato({ r }: { r: ResultadoSindicato }) {
         {r.representantes.length === 0 ? (
           <p className="text-xs text-gray-400 italic">Nenhum membro vinculado.</p>
         ) : (
-          <div className="flex flex-wrap gap-1.5">
+          <div className="space-y-1.5">
             {r.representantes.map((v) => (
-              <span key={v.id} className="inline-flex items-center gap-1 rounded-full bg-blue-50 border border-blue-100 px-2.5 py-0.5 text-xs text-blue-700">
-                <span className="font-medium">{v.representante.nome}</span>
-                <span className="text-blue-400">· {LABEL_PAPEL_SIND[v.papel] ?? v.papel}</span>
-              </span>
+              <div key={v.id} className="flex flex-wrap items-start gap-1.5">
+                <span className="inline-flex items-center gap-1 rounded-full bg-blue-50 border border-blue-100 px-2.5 py-0.5 text-xs text-blue-700 shrink-0">
+                  <span className="font-medium">{v.representante.nome}</span>
+                  <span className="text-blue-400">· {LABEL_PAPEL_SIND[v.papel] ?? v.papel}</span>
+                </span>
+                {v.representante.empresas.length > 0 && (
+                  <>
+                    <span className="text-xs text-gray-300 self-center">→</span>
+                    {v.representante.empresas.map((e) => (
+                      <span key={e.id} className="inline-flex items-center rounded-full bg-orange-50 border border-orange-100 px-2 py-0.5 text-xs text-orange-700">
+                        {e.empresa.razaoSocial}
+                      </span>
+                    ))}
+                  </>
+                )}
+              </div>
             ))}
           </div>
         )}

@@ -46,7 +46,22 @@ export async function GET(request: NextRequest) {
       where: { nome: { contains: busca, mode: "insensitive" } },
       include: {
         representantes: {
-          include: { representante: { select: { id: true, nome: true } } },
+          include: {
+            representante: {
+              select: {
+                id: true,
+                nome: true,
+                empresas: {
+                  where: { ativo: true },
+                  select: {
+                    id: true,
+                    tipoRelacao: true,
+                    empresa: { select: { id: true, razaoSocial: true } },
+                  },
+                },
+              },
+            },
+          },
           orderBy: { createdAt: "asc" },
         },
         _count: { select: { empresas: true } },
