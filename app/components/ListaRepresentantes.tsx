@@ -161,8 +161,9 @@ export default function ListaRepresentantes() {
     await carregar();
   }
 
+  const semAcento = (s: string) => s.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase();
   const filtrados = representantes.filter((r) =>
-    !filtro || r.nome.toLowerCase().includes(filtro.toLowerCase())
+    !filtro || semAcento(r.nome).includes(semAcento(filtro))
   );
   const todosMarcados = filtrados.length > 0 && marcados.size === filtrados.length;
 
