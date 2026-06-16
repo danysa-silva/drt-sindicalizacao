@@ -24,12 +24,13 @@ export default function ListaRepresentantes() {
 
   const [representantes, setRepresentantes] = useState<Representante[]>([]);
   const [filtro, setFiltro] = useState("");
-  const [modal, setModal] = useState<"novo" | "editar" | "excluir" | "vinculos" | null>(null);
+  const [modal, setModal] = useState<"novo" | "editar" | "excluir" | "excluirLote" | "vinculos" | null>(null);
   const [selecionado, setSelecionado] = useState<Representante | null>(null);
   const [form, setForm] = useState(FORM_VAZIO);
   const [carregando, setCarregando] = useState(true);
   const [salvando, setSalvando] = useState(false);
   const [erro, setErro] = useState("");
+  const [marcados, setMarcados] = useState<Set<number>>(new Set());
 
   const carregar = useCallback(async () => {
     setCarregando(true);
@@ -92,6 +93,33 @@ export default function ListaRepresentantes() {
     setErro("");
   }
 
+  function toggleMarcado(id: number) {
+    setMarcados((prev) => {
+      const next = new Set(prev);
+      next.has(id) ? next.delete(id) : next.add(id);
+      return next;
+    });
+  }
+
+  function toggleTodos() {
+    if (marcados.size === filtrados.length && filtrados.length > 0) {
+      setMarcados(new Set());
+    } else {
+      setMarcados(new Set(filtrados.map((r) => r.id)));
+    }
+  }
+
+  async function confirmarExcluirLote() {
+    await fetch("/api/representantes", {
+      method: "DELETE",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ ids: [...marcados] }),
+    });
+    setMarcados(new Set());
+    fecharModal();
+    await carregar();
+  }
+
   async function salvar(e: React.FormEvent) {
     e.preventDefault();
     setErro("");
@@ -136,6 +164,7 @@ export default function ListaRepresentantes() {
   const filtrados = representantes.filter((r) =>
     !filtro || r.nome.toLowerCase().includes(filtro.toLowerCase())
   );
+  const todosMarcados = filtrados.length > 0 && marcados.size === filtrados.length;
 
   return (
     <main className="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8">
@@ -143,7 +172,7 @@ export default function ListaRepresentantes() {
       <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <input
           value={filtro}
-          onChange={(e) => setFiltro(e.target.value)}
+          onChange={(e) => { setFiltro(e.target.value); setMarcados(new Set()); }}
           placeholder="Buscar por nome..."
           className="flex-1 rounded-lg border border-gray-300 px-4 py-2 text-sm shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
         />
@@ -156,6 +185,29 @@ export default function ListaRepresentantes() {
           </button>
         )}
       </div>
+
+      {/* Barra de exclusão em lote */}
+      {podeExcluir && marcados.size > 0 && (
+        <div className="mb-3 flex items-center justify-between rounded-lg border border-red-200 bg-red-50 px-4 py-2.5">
+          <span className="text-sm font-medium text-red-700">
+            {marcados.size} representante{marcados.size !== 1 ? "s" : ""} selecionado{marcados.size !== 1 ? "s" : ""}
+          </span>
+          <div className="flex gap-2">
+            <button
+              onClick={() => setMarcados(new Set())}
+              className="rounded-md border border-gray-300 bg-white px-3 py-1.5 text-xs font-medium text-gray-600 hover:bg-gray-50"
+            >
+              Desmarcar
+            </button>
+            <button
+              onClick={() => setModal("excluirLote")}
+              className="rounded-md bg-red-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-red-700"
+            >
+              Excluir selecionados
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* Resumo */}
       <div className="mb-4 grid grid-cols-2 gap-3 sm:grid-cols-3">
@@ -182,6 +234,17 @@ export default function ListaRepresentantes() {
             <table className="w-full text-sm">
               <thead className="bg-gray-50 text-xs font-medium uppercase tracking-wide text-gray-500">
                 <tr>
+                  {podeExcluir && (
+                    <th className="px-3 py-3 text-center w-8">
+                      <input
+                        type="checkbox"
+                        checked={todosMarcados}
+                        onChange={toggleTodos}
+                        className="h-4 w-4 rounded border-gray-300 accent-red-600 cursor-pointer"
+                        title="Selecionar todos"
+                      />
+                    </th>
+                  )}
                   <th className="px-4 py-3 text-left">Nome</th>
                   <th className="px-4 py-3 text-center">Sindicatos</th>
                   <th className="px-4 py-3 text-center">Conselhos</th>
@@ -191,7 +254,17 @@ export default function ListaRepresentantes() {
               </thead>
               <tbody className="divide-y divide-gray-100">
                 {filtrados.map((r) => (
-                  <tr key={r.id} className="hover:bg-gray-50">
+                  <tr key={r.id} className={`hover:bg-gray-50 ${marcados.has(r.id) ? "bg-red-50" : ""}`}>
+                    {podeExcluir && (
+                      <td className="px-3 py-3 text-center">
+                        <input
+                          type="checkbox"
+                          checked={marcados.has(r.id)}
+                          onChange={() => toggleMarcado(r.id)}
+                          className="h-4 w-4 rounded border-gray-300 accent-red-600 cursor-pointer"
+                        />
+                      </td>
+                    )}
                     <td className="px-4 py-3 font-medium text-gray-900">{r.nome}</td>
                     <td className="px-4 py-3 text-center">
                       <span className={`rounded-full px-2.5 py-0.5 text-xs font-semibold ${r._count.sindicatos > 0 ? "bg-blue-100 text-blue-700" : "bg-gray-100 text-gray-400"}`}>
@@ -321,6 +394,21 @@ export default function ListaRepresentantes() {
           <div className="flex justify-end gap-3 mt-4">
             <button onClick={fecharModal} className="rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50">Cancelar</button>
             <button onClick={confirmarExcluir} className="rounded-md bg-red-600 px-4 py-2 text-sm font-medium text-white hover:bg-red-700">Excluir</button>
+          </div>
+        </Modal>
+      )}
+
+      {/* Modal: Confirmar Exclusão em Lote */}
+      {modal === "excluirLote" && (
+        <Modal titulo="Confirmar Exclusão em Lote" onFechar={fecharModal}>
+          <p className="text-sm text-gray-600 mb-4">
+            Deseja excluir <strong>{marcados.size} representante{marcados.size !== 1 ? "s" : ""}</strong>? Todos os vínculos com sindicatos, conselhos e empresas também serão removidos.
+          </p>
+          <div className="flex justify-end gap-3">
+            <button onClick={fecharModal} className="rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50">Cancelar</button>
+            <button onClick={confirmarExcluirLote} className="rounded-md bg-red-600 px-4 py-2 text-sm font-medium text-white hover:bg-red-700">
+              Excluir {marcados.size}
+            </button>
           </div>
         </Modal>
       )}

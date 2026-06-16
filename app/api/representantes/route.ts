@@ -44,6 +44,19 @@ export async function GET(request: NextRequest) {
   return Response.json(representantes);
 }
 
+export async function DELETE(request: NextRequest) {
+  const usuario = await getUsuarioFromRequest(request);
+  if (!usuario) return Response.json({ error: "Não autenticado" }, { status: 401 });
+  if (usuario.perfil !== "admin") return Response.json({ error: "Acesso negado" }, { status: 403 });
+
+  const body = await request.json();
+  const ids: number[] = Array.isArray(body.ids) ? body.ids.map(Number).filter(Boolean) : [];
+  if (!ids.length) return Response.json({ error: "Nenhum ID informado" }, { status: 400 });
+
+  const { count } = await prisma.representante.deleteMany({ where: { id: { in: ids } } });
+  return Response.json({ excluidos: count });
+}
+
 export async function POST(request: NextRequest) {
   const usuario = await getUsuarioFromRequest(request);
   if (!usuario) {
