@@ -290,10 +290,10 @@ export default function ListaEmpresas() {
       {/* Resumo */}
       <div className="mb-4 grid grid-cols-2 gap-3 sm:grid-cols-4 sm:gap-3">
         {[
-          { label: "Total", valor: empresas.length, cor: "text-gray-800" },
-          { label: "Ativos", valor: empresas.filter((e) => e.status === "ativo").length, cor: "text-green-700" },
-          { label: "Inativos", valor: empresas.filter((e) => e.status === "inativo").length, cor: "text-red-700" },
-          { label: "Vencidos", valor: empresas.filter((e) => vencida(e.dataVencimento) && e.status === "ativo").length, cor: "text-orange-600" },
+          { label: "Total", valor: filtradas.length, cor: "text-gray-800" },
+          { label: "Ativos", valor: filtradas.filter((e) => e.status === "ativo").length, cor: "text-green-700" },
+          { label: "Inativos", valor: filtradas.filter((e) => e.status === "inativo").length, cor: "text-red-700" },
+          { label: "Vencidos", valor: filtradas.filter((e) => vencida(e.dataVencimento) && e.status === "ativo").length, cor: "text-orange-600" },
         ].map(({ label, valor, cor }) => (
           <div key={label} className="rounded-lg bg-white border border-gray-200 px-4 py-3 shadow-sm">
             <p className="text-xs text-gray-500">{label}</p>
