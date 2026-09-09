@@ -54,8 +54,8 @@ export async function getUsuarioFromRequest(req: NextRequest): Promise<TokenPayl
   const { prisma } = await import("./prisma");
   const usuario = await prisma.usuario.findUnique({
     where: { id: payload.id },
-    select: { id: true, email: true, nome: true, perfil: true },
+    select: { id: true, email: true, nome: true, perfil: true, status: true },
   });
-  if (!usuario) return null;
+  if (!usuario || usuario.status !== "aprovado") return null;
   return usuario as TokenPayload;
 }

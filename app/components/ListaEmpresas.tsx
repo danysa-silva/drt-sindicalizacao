@@ -225,7 +225,12 @@ export default function ListaEmpresas() {
       !filtro ||
       corresponde(e.razaoSocial, filtro) ||
       (cnpjBusca.length > 0 && e.cnpj.includes(cnpjBusca));
-    const passaStatus = filtroStatus === "todos" || e.status === filtroStatus;
+    const passaStatus =
+      filtroStatus === "todos"
+        ? true
+        : filtroStatus === "desfiliado"
+        ? e.status === "ativo" && vencida(e.dataVencimento)
+        : e.status === filtroStatus;
     const passaSindicato =
       filtroSindicato === "todos" ||
       (filtroSindicato === "sem_sindicato" ? !e.sindicatoId : e.sindicatoId === Number(filtroSindicato));
@@ -252,6 +257,7 @@ export default function ListaEmpresas() {
               <option value="todos">Todos os status</option>
               <option value="ativo">Ativos</option>
               <option value="inativo">Inativos</option>
+              <option value="desfiliado">Desfiliados</option>
             </select>
             <select
               value={filtroSindicato}
@@ -290,16 +296,26 @@ export default function ListaEmpresas() {
       {/* Resumo */}
       <div className="mb-4 grid grid-cols-2 gap-3 sm:grid-cols-4 sm:gap-3">
         {[
-          { label: "Total", valor: filtradas.length, cor: "text-gray-800" },
-          { label: "Ativos", valor: filtradas.filter((e) => e.status === "ativo").length, cor: "text-green-700" },
-          { label: "Inativos", valor: filtradas.filter((e) => e.status === "inativo").length, cor: "text-red-700" },
-          { label: "Vencidos", valor: filtradas.filter((e) => vencida(e.dataVencimento) && e.status === "ativo").length, cor: "text-orange-600" },
-        ].map(({ label, valor, cor }) => (
-          <div key={label} className="rounded-lg bg-white border border-gray-200 px-4 py-3 shadow-sm">
-            <p className="text-xs text-gray-500">{label}</p>
-            <p className={`text-2xl font-bold ${cor}`}>{valor}</p>
-          </div>
-        ))}
+          { label: "Total", chave: "todos", valor: filtradas.length, cor: "text-gray-800" },
+          { label: "Ativos", chave: "ativo", valor: filtradas.filter((e) => e.status === "ativo").length, cor: "text-green-700" },
+          { label: "Inativos", chave: "inativo", valor: filtradas.filter((e) => e.status === "inativo").length, cor: "text-red-700" },
+          { label: "Desfiliados", chave: "desfiliado", valor: filtradas.filter((e) => vencida(e.dataVencimento) && e.status === "ativo").length, cor: "text-orange-600" },
+        ].map(({ label, chave, valor, cor }) => {
+          const ativo = filtroStatus === chave;
+          return (
+            <button
+              key={label}
+              type="button"
+              onClick={() => setFiltroStatus(ativo ? "todos" : chave)}
+              className={`rounded-lg bg-white border px-4 py-3 shadow-sm text-left transition hover:border-blue-300 hover:shadow-md ${
+                ativo ? "border-blue-500 ring-1 ring-blue-500" : "border-gray-200"
+              }`}
+            >
+              <p className="text-xs text-gray-500">{label}</p>
+              <p className={`text-2xl font-bold ${cor}`}>{valor}</p>
+            </button>
+          );
+        })}
       </div>
 
       {/* Lista */}

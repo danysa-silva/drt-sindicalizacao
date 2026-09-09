@@ -57,10 +57,22 @@ export async function POST(request: NextRequest) {
   }
 
   const senhaHash = await bcrypt.hash(senha, 10);
-  const perfil = ADMINS_INICIAIS.includes(email) ? "admin" : "visualizador";
+  const ehAdminInicial = ADMINS_INICIAIS.includes(email);
+  const perfil = ehAdminInicial ? "admin" : "visualizador";
+  const status = ehAdminInicial ? "aprovado" : "pendente";
   const usuario = await prisma.usuario.create({
-    data: { email, nome, senhaHash, perfil },
+    data: { email, nome, senhaHash, perfil, status },
   });
+
+  if (usuario.status === "pendente") {
+    return Response.json(
+      {
+        pendente: true,
+        message: "Cadastro realizado com sucesso. Aguarde a aprovação de um administrador para acessar o sistema.",
+      },
+      { status: 201 }
+    );
+  }
 
   const token = await signToken({ id: usuario.id, email: usuario.email, nome: usuario.nome, perfil: usuario.perfil });
 

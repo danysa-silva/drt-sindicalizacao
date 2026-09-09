@@ -41,6 +41,20 @@ export async function POST(request: NextRequest) {
     data: { loginAttempts: 0, bloqueadoAte: null },
   });
 
+  if (usuario.status === "pendente") {
+    return Response.json(
+      { error: "Seu cadastro está aguardando aprovação de um administrador." },
+      { status: 403 }
+    );
+  }
+
+  if (usuario.status === "rejeitado") {
+    return Response.json(
+      { error: "Seu cadastro foi rejeitado. Entre em contato com um administrador." },
+      { status: 403 }
+    );
+  }
+
   const token = await signToken({ id: usuario.id, email: usuario.email, nome: usuario.nome, perfil: usuario.perfil });
 
   return Response.json(

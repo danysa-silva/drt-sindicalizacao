@@ -7,6 +7,7 @@ export default function CadastroPage() {
   const [form, setForm] = useState({ email: "", nome: "", senha: "", confirmar: "" });
   const [erro, setErro] = useState("");
   const [carregando, setCarregando] = useState(false);
+  const [pendente, setPendente] = useState(false);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -19,19 +20,27 @@ export default function CadastroPage() {
 
     setCarregando(true);
 
-    const res = await fetch("/api/auth/register", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ email: form.email, nome: form.nome, senha: form.senha }),
-    });
+    try {
+      const res = await fetch("/api/auth/register", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: form.email, nome: form.nome, senha: form.senha }),
+      });
 
-    if (res.ok) {
-      window.location.href = "/";
-    } else {
-      const data = await res.json();
-      setErro(data.error ?? "Erro ao criar conta");
+      const data = await res.json().catch(() => null);
+
+      if (res.ok && data?.pendente) {
+        setPendente(true);
+      } else if (res.ok) {
+        window.location.href = "/";
+      } else {
+        setErro(data?.error ?? "Erro ao criar conta");
+      }
+    } catch {
+      setErro("Não foi possível conectar ao servidor. Tente novamente.");
+    } finally {
+      setCarregando(false);
     }
-    setCarregando(false);
   }
 
   const inp = "w-full rounded-lg border border-gray-300 px-4 py-2.5 text-sm text-black shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500";
@@ -45,6 +54,18 @@ export default function CadastroPage() {
         </div>
 
         <div className="rounded-xl bg-white border border-gray-200 shadow-sm px-6 py-8">
+          {pendente ? (
+            <div className="text-center">
+              <h2 className="text-lg font-semibold text-gray-800 mb-2">Cadastro realizado!</h2>
+              <p className="text-sm text-gray-600 mb-6">
+                Sua conta foi criada e está aguardando aprovação de um administrador. Você poderá entrar assim que seu acesso for liberado.
+              </p>
+              <Link href="/login" className="text-blue-600 hover:underline font-medium text-sm">
+                Voltar para o login
+              </Link>
+            </div>
+          ) : (
+          <>
           <h2 className="text-lg font-semibold text-gray-800 mb-1">Criar conta</h2>
           <p className="text-xs text-gray-500 mb-6">Aceitos: @fieam.org.br, @sesi.org.br, @senai.org.br</p>
 
@@ -113,6 +134,8 @@ export default function CadastroPage() {
               Entrar
             </Link>
           </p>
+          </>
+          )}
         </div>
       </div>
     </div>

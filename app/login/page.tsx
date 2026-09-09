@@ -14,19 +14,25 @@ export default function LoginPage() {
     setErro("");
     setCarregando(true);
 
-    const res = await fetch("/api/auth/login", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(form),
-    });
+    try {
+      const res = await fetch("/api/auth/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(form),
+      });
 
-    if (res.ok) {
-      window.location.href = "/";
-    } else {
-      const data = await res.json();
-      setErro(data.error ?? "Erro ao entrar");
+      if (res.ok) {
+        window.location.href = "/";
+        return;
+      }
+
+      const data = await res.json().catch(() => null);
+      setErro(data?.error ?? "Erro ao entrar. Tente novamente em instantes.");
+    } catch {
+      setErro("Não foi possível conectar ao servidor. Tente novamente.");
+    } finally {
+      setCarregando(false);
     }
-    setCarregando(false);
   }
 
   const inp = "w-full rounded-lg border border-gray-300 px-4 py-2.5 text-sm shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500";
