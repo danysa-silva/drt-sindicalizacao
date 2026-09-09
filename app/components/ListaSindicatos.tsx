@@ -226,10 +226,12 @@ export default function ListaSindicatos() {
       </div>
 
       {/* Resumo */}
-      <div className="mb-4 grid grid-cols-2 gap-3">
+      <div className="mb-4 grid grid-cols-2 gap-3 sm:grid-cols-4">
         {[
           { label: "Total", valor: sindicatos.length, cor: "text-gray-800" },
-          { label: "Patronais", valor: sindicatos.length, cor: "text-indigo-700" },
+          { label: "Patronais", valor: sindicatos.filter((s) => s.tipo === "patronal").length, cor: "text-indigo-700" },
+          { label: "Externos", valor: sindicatos.filter((s) => s.tipo === "externo").length, cor: "text-orange-700" },
+          { label: "Internos", valor: sindicatos.filter((s) => s.tipo === "interno").length, cor: "text-blue-700" },
         ].map(({ label, valor, cor }) => (
           <div key={label} className="rounded-lg bg-white border border-gray-200 px-4 py-3 shadow-sm">
             <p className="text-xs text-gray-500">{label}</p>
