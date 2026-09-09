@@ -342,7 +342,7 @@ export default function ListaEmpresas() {
                   <div className="flex flex-wrap items-center gap-x-3 gap-y-0.5 text-xs text-gray-500">
                     {e.sindicato && <span>{e.sindicato.nome}</span>}
                     <span className={vencida(e.dataVencimento) && e.status === "ativo" ? "text-orange-600 font-medium" : ""}>
-                      Venc. {formatarData(e.dataVencimento)}{vencida(e.dataVencimento) && e.status === "ativo" ? " ⚠" : ""}
+                      Desfiliação {formatarData(e.dataVencimento)}{vencida(e.dataVencimento) && e.status === "ativo" ? " ⚠" : ""}
                     </span>
                     {e.situacaoRFB && (
                       <span className={badgeSituacaoRFB(e.situacaoRFB)}>{e.situacaoRFB}</span>
@@ -372,7 +372,7 @@ export default function ListaEmpresas() {
                     <th className="px-4 py-3 text-left">Perfil / CNAE</th>
                     <th className="px-4 py-3 text-left">Sindicato</th>
                     <th className="px-4 py-3 text-left">Sit. RFB</th>
-                    <th className="px-4 py-3 text-left">Vencimento</th>
+                    <th className="px-4 py-3 text-left">Desfiliação</th>
                     <th className="px-4 py-3 text-left">Status DRT</th>
                     <th className="px-4 py-3 text-right">Ações</th>
                   </tr>
