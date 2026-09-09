@@ -106,11 +106,11 @@ export default function ListaEmpresas() {
 
   useEffect(() => { carregar(); }, [carregar]);
 
-  // Atualiza a lista automaticamente a cada 30 segundos quando nenhum modal está aberto
+  // Atualiza a lista automaticamente a cada 5 minutos quando nenhum modal está aberto
   useEffect(() => {
     const timer = setInterval(() => {
       if (!modal) carregar();
-    }, 30_000);
+    }, 300_000);
     return () => clearInterval(timer);
   }, [carregar, modal]);
 
