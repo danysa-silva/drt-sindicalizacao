@@ -93,7 +93,7 @@ export async function PUT(request: NextRequest, { params }: Params) {
       afinidade: afinidade ?? null,
       sindicatoId,
       dataSindicalizacao: dataSindicalizacao ? new Date(dataSindicalizacao) : antes.dataSindicalizacao,
-      dataVencimento: dataVencimento ? new Date(dataVencimento) : antes.dataVencimento,
+      dataVencimento: dataVencimento ? new Date(dataVencimento) : null,
       status,
       observacoes: observacoes ?? null,
     },
@@ -108,7 +108,7 @@ export async function PUT(request: NextRequest, { params }: Params) {
       ramoAtividade: antes.ramoAtividade, perfil: antes.perfil, situacaoRFB: antes.situacaoRFB,
       afinidade: antes.afinidade, sindicatoId: antes.sindicatoId,
       dataSindicalizacao: antes.dataSindicalizacao.toISOString().split("T")[0],
-      dataVencimento: antes.dataVencimento.toISOString().split("T")[0],
+      dataVencimento: antes.dataVencimento ? antes.dataVencimento.toISOString().split("T")[0] : null,
       status: antes.status, observacoes: antes.observacoes,
     },
     { cnpj, razaoSocial, cnae, ramoAtividade, perfil, situacaoRFB, afinidade, sindicatoId, dataSindicalizacao, dataVencimento, status, observacoes }

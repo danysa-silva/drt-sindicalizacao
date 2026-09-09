@@ -89,7 +89,7 @@ export async function POST(request: NextRequest) {
       afinidade: afinidade ?? null,
       sindicatoId,
       dataSindicalizacao: dataSindicalizacao ? new Date(dataSindicalizacao) : new Date(),
-      dataVencimento: dataVencimento ? new Date(dataVencimento) : new Date(new Date().setFullYear(new Date().getFullYear() + 1)),
+      dataVencimento: dataVencimento ? new Date(dataVencimento) : null,
       status,
       observacoes: observacoes ?? null,
     },

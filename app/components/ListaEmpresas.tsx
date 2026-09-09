@@ -32,7 +32,7 @@ type Empresa = {
   sindicatoId: number | null;
   sindicato: Sindicato | null;
   dataSindicalizacao: string;
-  dataVencimento: string;
+  dataVencimento: string | null;
   status: string;
   observacoes: string | null;
   representantes: RepresentanteEmpresaVinculo[];
@@ -62,8 +62,8 @@ function badgeSituacaoRFB(s: string | null) {
   return "text-red-600";
 }
 
-function vencida(data: string) {
-  return new Date(data) < new Date();
+function vencida(data: string | null) {
+  return !!data && new Date(data) < new Date();
 }
 
 function Row({ label, valor, classe }: { label: string; valor?: string | null; classe?: string }) {
@@ -152,7 +152,7 @@ export default function ListaEmpresas() {
         e.sindicato?.nome ?? "",
         e.sindicato?.tipo ?? "",
         formatarData(e.dataSindicalizacao),
-        formatarData(e.dataVencimento),
+        e.dataVencimento ? formatarData(e.dataVencimento) : "",
         e.status,
         e.observacoes ?? "",
       ].map(escaparCampo).join(";")
@@ -341,9 +341,11 @@ export default function ListaEmpresas() {
                   </div>
                   <div className="flex flex-wrap items-center gap-x-3 gap-y-0.5 text-xs text-gray-500">
                     {e.sindicato && <span>{e.sindicato.nome}</span>}
-                    <span className={vencida(e.dataVencimento) && e.status === "ativo" ? "text-orange-600 font-medium" : ""}>
-                      Desfiliação {formatarData(e.dataVencimento)}{vencida(e.dataVencimento) && e.status === "ativo" ? " ⚠" : ""}
-                    </span>
+                    {e.dataVencimento && (
+                      <span className={vencida(e.dataVencimento) && e.status === "ativo" ? "text-orange-600 font-medium" : ""}>
+                        Desfiliação {formatarData(e.dataVencimento)}{vencida(e.dataVencimento) && e.status === "ativo" ? " ⚠" : ""}
+                      </span>
+                    )}
                     {e.situacaoRFB && (
                       <span className={badgeSituacaoRFB(e.situacaoRFB)}>{e.situacaoRFB}</span>
                     )}
@@ -403,7 +405,7 @@ export default function ListaEmpresas() {
                       </td>
                       <td className="px-4 py-3">
                         <span className={vencida(e.dataVencimento) && e.status === "ativo" ? "text-orange-600 font-medium text-xs" : "text-gray-600 text-xs"}>
-                          {formatarData(e.dataVencimento)}
+                          {e.dataVencimento ? formatarData(e.dataVencimento) : "—"}
                           {vencida(e.dataVencimento) && e.status === "ativo" && " ⚠"}
                         </span>
                       </td>
@@ -477,8 +479,10 @@ export default function ListaEmpresas() {
                   <Row
                     label="Desfiliação"
                     valor={
-                      formatarData(selecionada.dataVencimento) +
-                      (vencida(selecionada.dataVencimento) && selecionada.status === "ativo" ? " ⚠ Vencido" : "")
+                      selecionada.dataVencimento
+                        ? formatarData(selecionada.dataVencimento) +
+                          (vencida(selecionada.dataVencimento) && selecionada.status === "ativo" ? " ⚠ Vencido" : "")
+                        : null
                     }
                     classe={vencida(selecionada.dataVencimento) && selecionada.status === "ativo" ? "text-orange-600 font-medium" : ""}
                   />

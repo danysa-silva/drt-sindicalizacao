@@ -147,7 +147,7 @@ export async function POST(request: NextRequest) {
         afinidade: col(row, "afinidade") || null,
         sindicatoId,
         dataSindicalizacao: dataSind ?? new Date(),
-        dataVencimento: dataVenc ?? new Date(new Date().setFullYear(new Date().getFullYear() + 1)),
+        dataVencimento: dataVenc,
         status: col(row, "status") || "ativo",
         observacoes: col(row, "observacoes") || null,
       };

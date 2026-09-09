@@ -52,7 +52,7 @@ model Empresa {
   afinidade          String?
   sindicatoId        Int?
   dataSindicalizacao DateTime
-  dataVencimento     DateTime
+  dataVencimento     DateTime?
   status             String    @default("ativo")
   observacoes        String?
   createdAt          DateTime  @default(now())
