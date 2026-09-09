@@ -79,6 +79,7 @@ export default function ListaSindicatos() {
   const [sindicatos, setSindicatos] = useState<Sindicato[]>([]);
   const [todosRepresentantes, setTodosRepresentantes] = useState<RepresentanteLite[]>([]);
   const [filtro, setFiltro] = useState("");
+  const [filtroTipo, setFiltroTipo] = useState("todos");
   const [expandido, setExpandido] = useState<number | null>(null);
   const [modal, setModal] = useState<"novo" | "editar" | "excluir" | "membros" | null>(null);
   const [selecionado, setSelecionado] = useState<Sindicato | null>(null);
@@ -199,9 +200,12 @@ export default function ListaSindicatos() {
     return true;
   }
 
-  const filtrados = sindicatos.filter((s) =>
-    !filtro || corresponde(s.nome, filtro) || (s.cnpj?.includes(filtro.replace(/\D/g, "")) ?? false)
-  );
+  const filtrados = sindicatos.filter((s) => {
+    const passaTexto =
+      !filtro || corresponde(s.nome, filtro) || (s.cnpj?.includes(filtro.replace(/\D/g, "")) ?? false);
+    const passaTipo = filtroTipo === "todos" || s.tipo === filtroTipo;
+    return passaTexto && passaTipo;
+  });
 
   return (
     <main className="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8">
@@ -228,16 +232,26 @@ export default function ListaSindicatos() {
       {/* Resumo */}
       <div className="mb-4 grid grid-cols-2 gap-3 sm:grid-cols-4">
         {[
-          { label: "Total", valor: sindicatos.length, cor: "text-gray-800" },
-          { label: "Patronais", valor: sindicatos.filter((s) => s.tipo === "patronal").length, cor: "text-indigo-700" },
-          { label: "Externos", valor: sindicatos.filter((s) => s.tipo === "externo").length, cor: "text-orange-700" },
-          { label: "Internos", valor: sindicatos.filter((s) => s.tipo === "interno").length, cor: "text-blue-700" },
-        ].map(({ label, valor, cor }) => (
-          <div key={label} className="rounded-lg bg-white border border-gray-200 px-4 py-3 shadow-sm">
-            <p className="text-xs text-gray-500">{label}</p>
-            <p className={`text-2xl font-bold ${cor}`}>{valor}</p>
-          </div>
-        ))}
+          { label: "Total", chave: "todos", valor: filtrados.length, cor: "text-gray-800" },
+          { label: "Patronais", chave: "patronal", valor: filtrados.filter((s) => s.tipo === "patronal").length, cor: "text-indigo-700" },
+          { label: "Externos", chave: "externo", valor: filtrados.filter((s) => s.tipo === "externo").length, cor: "text-orange-700" },
+          { label: "Internos", chave: "interno", valor: filtrados.filter((s) => s.tipo === "interno").length, cor: "text-blue-700" },
+        ].map(({ label, chave, valor, cor }) => {
+          const ativo = filtroTipo === chave;
+          return (
+            <button
+              key={label}
+              type="button"
+              onClick={() => setFiltroTipo(ativo ? "todos" : chave)}
+              className={`rounded-lg bg-white border px-4 py-3 shadow-sm text-left transition hover:border-blue-300 hover:shadow-md ${
+                ativo ? "border-blue-500 ring-1 ring-blue-500" : "border-gray-200"
+              }`}
+            >
+              <p className="text-xs text-gray-500">{label}</p>
+              <p className={`text-2xl font-bold ${cor}`}>{valor}</p>
+            </button>
+          );
+        })}
       </div>
 
       {/* Lista acordeão */}
