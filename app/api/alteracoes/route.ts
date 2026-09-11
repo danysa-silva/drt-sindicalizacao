@@ -16,7 +16,7 @@ export async function GET(request: NextRequest) {
   const acao = searchParams.get("acao");
 
   const desde = new Date();
-  desde.setDate(desde.getDate() - 30);
+  desde.setFullYear(desde.getFullYear() - 1);
 
   const alteracoes = await prisma.historicoAlteracao.findMany({
     where: {
@@ -24,7 +24,7 @@ export async function GET(request: NextRequest) {
       ...(acao && acao !== "todos" ? { acao } : {}),
     },
     orderBy: { createdAt: "desc" },
-    take: 500,
+    take: 10_000,
   });
 
   return Response.json(alteracoes);

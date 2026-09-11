@@ -121,7 +121,7 @@ export default function ListaAlteracoes() {
           { label: "Excel Baixado", valor: contagem.excel,  cor: "text-gray-600" },
         ].map(({ label, valor, cor }) => (
           <div key={label} className="rounded-lg bg-white border border-gray-200 px-4 py-3 shadow-sm">
-            <p className="text-xs text-gray-500">{label} (30 dias)</p>
+            <p className="text-xs text-gray-500">{label} (último ano)</p>
             <p className={`text-2xl font-bold ${cor}`}>{valor}</p>
           </div>
         ))}
@@ -132,7 +132,7 @@ export default function ListaAlteracoes() {
         {carregando ? (
           <div className="py-16 text-center text-sm text-gray-400">Carregando...</div>
         ) : filtradas.length === 0 ? (
-          <div className="py-16 text-center text-sm text-gray-400">Nenhuma alteração encontrada nos últimos 30 dias.</div>
+          <div className="py-16 text-center text-sm text-gray-400">Nenhuma alteração encontrada no último ano.</div>
         ) : (
           <>
             {/* Cards — mobile */}
@@ -212,7 +212,7 @@ export default function ListaAlteracoes() {
       </div>
 
       <p className="mt-3 text-xs text-gray-400">
-        {filtradas.length} registro{filtradas.length !== 1 ? "s" : ""} — últimos 30 dias
+        {filtradas.length} registro{filtradas.length !== 1 ? "s" : ""} — último ano
       </p>
     </main>
   );
