@@ -2,7 +2,6 @@
 
 import { useState } from "react";
 import { useUsuario } from "./UserContext";
-import * as XLSX from "xlsx";
 
 // ── tipos ─────────────────────────────────────────────────────────────────────
 
@@ -330,15 +329,37 @@ function SecaoResultados({ titulo, cor, children }: { titulo: string; cor: strin
   );
 }
 
-// ── exportação excel ──────────────────────────────────────────────────────────
+// ── exportação csv ────────────────────────────────────────────────────────────
 
-function exportarExcel(resposta: Resposta, busca: string) {
-  const wb = XLSX.utils.book_new();
+function escaparCampoCSV(valor: string): string {
+  if (valor.includes(";") || valor.includes('"') || valor.includes("\n")) {
+    return `"${valor.replace(/"/g, '""')}"`;
+  }
+  return valor;
+}
+
+function baixarCSV(nomeArquivo: string, linhas: Record<string, string | number | null | undefined>[]) {
+  if (linhas.length === 0) return;
+  const cabecalhos = Object.keys(linhas[0]);
+  const corpo = linhas.map((linha) =>
+    cabecalhos.map((c) => escaparCampoCSV(String(linha[c] ?? ""))).join(";")
+  );
+  const csv = "﻿" + [cabecalhos.map(escaparCampoCSV).join(";"), ...corpo].join("\n");
+  const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = nomeArquivo;
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+function exportarCSV(resposta: Resposta, busca: string) {
+  const arquivos: { nome: string; linhas: Record<string, string | number | null | undefined>[] }[] = [];
 
   function addSheet(nome: string, linhas: Record<string, string | number | null | undefined>[]) {
     if (linhas.length === 0) return;
-    const ws = XLSX.utils.json_to_sheet(linhas);
-    XLSX.utils.book_append_sheet(wb, ws, nome.slice(0, 31));
+    arquivos.push({ nome, linhas });
   }
 
   function linhasPessoas(pessoas: ResultadoPessoa[]) {
@@ -419,9 +440,13 @@ function exportarExcel(resposta: Resposta, busca: string) {
     addSheet("Empresas", linhasEmpresas(resposta.resultados));
   }
 
-  if (wb.SheetNames.length === 0) return;
-  const nomeArquivo = `vinculos-${busca.replace(/\s+/g, "-").toLowerCase()}-${new Date().toISOString().slice(0, 10)}.xlsx`;
-  XLSX.writeFile(wb, nomeArquivo);
+  if (arquivos.length === 0) return;
+  const base = `vinculos-${busca.replace(/\s+/g, "-").toLowerCase()}-${new Date().toISOString().slice(0, 10)}`;
+  const slug = (nome: string) =>
+    nome.toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "").replace(/\s+/g, "-");
+  for (const { nome, linhas } of arquivos) {
+    baixarCSV(`${base}-${slug(nome)}.csv`, linhas);
+  }
 }
 
 // ── componente principal ──────────────────────────────────────────────────────
@@ -523,13 +548,13 @@ export default function ConsultaVinculos() {
             </p>
             <button
               onClick={async () => {
-                exportarExcel(resposta, busca);
+                exportarCSV(resposta, busca);
                 await fetch("/api/alteracoes", {
                   method: "POST",
                   headers: { "Content-Type": "application/json" },
                   body: JSON.stringify({
                     entidadeNome: `Consulta: "${busca}" (${resposta.tipo})`,
-                    acao: "consulta_excel",
+                    acao: "consulta_csv",
                     campo: `tipo=${resposta.tipo}`,
                     valorNovo: `${resposta.total} resultado(s)`,
                   }),
@@ -540,7 +565,7 @@ export default function ConsultaVinculos() {
               <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                 <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/>
               </svg>
-              Exportar Excel
+              Exportar CSV
             </button>
           </div>
 

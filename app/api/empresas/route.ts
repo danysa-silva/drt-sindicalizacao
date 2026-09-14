@@ -36,7 +36,12 @@ const empresaSchema = z.object({
   observacoes: z.string().nullish(),
 });
 
-export async function GET() {
+export async function GET(request: NextRequest) {
+  const usuario = await getUsuarioFromRequest(request);
+  if (!usuario) {
+    return Response.json({ error: "Não autenticado" }, { status: 401 });
+  }
+
   const empresas = await prisma.empresa.findMany({
     orderBy: { razaoSocial: "asc" },
     include: {
