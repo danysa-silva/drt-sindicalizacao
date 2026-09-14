@@ -1,8 +1,9 @@
 import { NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getUsuarioFromRequest } from "@/lib/auth";
+import { withErrorHandling } from "@/lib/api-handler";
 
-export async function GET(request: NextRequest) {
+async function GET_handler(request: NextRequest) {
   const usuario = await getUsuarioFromRequest(request);
   if (!usuario) {
     return Response.json({ error: "Não autenticado" }, { status: 401 });
@@ -14,3 +15,5 @@ export async function GET(request: NextRequest) {
   });
   return Response.json(presidentes);
 }
+
+export const GET = withErrorHandling(GET_handler);

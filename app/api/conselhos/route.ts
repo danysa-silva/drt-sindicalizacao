@@ -3,6 +3,7 @@ import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { getUsuarioFromRequest, podeAlterar } from "@/lib/auth";
 import { registrarAuditoria } from "@/lib/auditoria";
+import { withErrorHandling } from "@/lib/api-handler";
 
 const conselhoSchema = z.object({
   nome: z
@@ -46,7 +47,7 @@ const includePresidentes = {
   },
 };
 
-export async function GET() {
+async function GET_handler() {
   const conselhos = await prisma.conselho.findMany({
     orderBy: { nome: "asc" },
     include: includePresidentes,
@@ -54,7 +55,7 @@ export async function GET() {
   return Response.json(conselhos);
 }
 
-export async function POST(request: NextRequest) {
+async function POST_handler(request: NextRequest) {
   const usuario = await getUsuarioFromRequest(request);
   if (!usuario) {
     return Response.json({ error: "Não autenticado" }, { status: 401 });
@@ -104,3 +105,6 @@ export async function POST(request: NextRequest) {
 
   return Response.json(conselho, { status: 201 });
 }
+
+export const GET = withErrorHandling(GET_handler);
+export const POST = withErrorHandling(POST_handler);

@@ -2,6 +2,8 @@ import { NextRequest } from "next/server";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { getUsuarioFromRequest, podeAlterar } from "@/lib/auth";
+import { withErrorHandling } from "@/lib/api-handler";
+import { parseId } from "@/lib/parse-id";
 
 type Params = { params: Promise<{ id: string; presidenteId: string }> };
 
@@ -38,7 +40,7 @@ const presidenteSchema = z.object({
     .transform((v) => (v === "" || v == null ? null : new Date(v))),
 });
 
-export async function PUT(request: NextRequest, { params }: Params) {
+async function PUT_handler(request: NextRequest, { params }: Params) {
   const usuario = await getUsuarioFromRequest(request);
   if (!usuario) {
     return Response.json({ error: "Não autenticado" }, { status: 401 });
@@ -48,6 +50,11 @@ export async function PUT(request: NextRequest, { params }: Params) {
   }
 
   const { presidenteId } = await params;
+  const presidenteIdNum = parseId(presidenteId);
+  if (presidenteIdNum === null) {
+    return Response.json({ error: "ID inválido" }, { status: 400 });
+  }
+
   const body = await request.json();
   const resultado = presidenteSchema.safeParse(body);
   if (!resultado.success) {
@@ -58,7 +65,7 @@ export async function PUT(request: NextRequest, { params }: Params) {
   const { nome, cargo, email, telefone, dataInicio, dataFim } = resultado.data;
 
   const presidente = await prisma.presidenteSindicato.update({
-    where: { id: Number(presidenteId) },
+    where: { id: presidenteIdNum },
     data: {
       nome,
       cargo: cargo ?? null,
@@ -71,7 +78,7 @@ export async function PUT(request: NextRequest, { params }: Params) {
   return Response.json(presidente);
 }
 
-export async function DELETE(request: NextRequest, { params }: Params) {
+async function DELETE_handler(request: NextRequest, { params }: Params) {
   const usuario = await getUsuarioFromRequest(request);
   if (!usuario) {
     return Response.json({ error: "Não autenticado" }, { status: 401 });
@@ -81,6 +88,14 @@ export async function DELETE(request: NextRequest, { params }: Params) {
   }
 
   const { presidenteId } = await params;
-  await prisma.presidenteSindicato.delete({ where: { id: Number(presidenteId) } });
+  const presidenteIdNum = parseId(presidenteId);
+  if (presidenteIdNum === null) {
+    return Response.json({ error: "ID inválido" }, { status: 400 });
+  }
+
+  await prisma.presidenteSindicato.delete({ where: { id: presidenteIdNum } });
   return Response.json({ ok: true });
 }
+
+export const PUT = withErrorHandling(PUT_handler);
+export const DELETE = withErrorHandling(DELETE_handler);

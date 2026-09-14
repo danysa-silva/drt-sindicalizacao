@@ -3,6 +3,8 @@ import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { getUsuarioFromRequest, podeAlterar } from "@/lib/auth";
 import { registrarAuditoria, registrarEdicao } from "@/lib/auditoria";
+import { withErrorHandling } from "@/lib/api-handler";
+import { parseId } from "@/lib/parse-id";
 
 type Params = { params: Promise<{ id: string }> };
 
@@ -38,17 +40,19 @@ const empresaSchema = z.object({
   observacoes: z.string().nullish(),
 });
 
-export async function GET(_request: NextRequest, { params }: Params) {
+async function GET_handler(_request: NextRequest, { params }: Params) {
   const { id } = await params;
+  const idNum = parseId(id);
+  if (idNum === null) return Response.json({ error: "ID inválido" }, { status: 400 });
   const empresa = await prisma.empresa.findUnique({
-    where: { id: Number(id) },
+    where: { id: idNum },
     include: { sindicato: true, conselhos: { include: { conselho: true } } },
   });
   if (!empresa) return Response.json({ error: "Empresa não encontrada" }, { status: 404 });
   return Response.json(empresa);
 }
 
-export async function PUT(request: NextRequest, { params }: Params) {
+async function PUT_handler(request: NextRequest, { params }: Params) {
   const usuario = await getUsuarioFromRequest(request);
   if (!usuario) {
     return Response.json({ error: "Não autenticado" }, { status: 401 });
@@ -58,6 +62,10 @@ export async function PUT(request: NextRequest, { params }: Params) {
   }
 
   const { id } = await params;
+
+  const idNum = parseId(id);
+
+  if (idNum === null) return Response.json({ error: "ID inválido" }, { status: 400 });
   const body = await request.json();
   const resultado = empresaSchema.safeParse(body);
   if (!resultado.success) {
@@ -70,18 +78,18 @@ export async function PUT(request: NextRequest, { params }: Params) {
     situacaoRFB, afinidade, dataSindicalizacao, dataVencimento, status, observacoes,
   } = resultado.data;
 
-  const antes = await prisma.empresa.findUnique({ where: { id: Number(id) } });
+  const antes = await prisma.empresa.findUnique({ where: { id: idNum } });
   if (!antes) return Response.json({ error: "Empresa não encontrada" }, { status: 404 });
 
   const existing = await prisma.empresa.findFirst({
-    where: { cnpj, NOT: { id: Number(id) } },
+    where: { cnpj, NOT: { id: idNum } },
   });
   if (existing) {
     return Response.json({ error: "CNPJ já cadastrado em outra empresa" }, { status: 409 });
   }
 
   const empresa = await prisma.empresa.update({
-    where: { id: Number(id) },
+    where: { id: idNum },
     data: {
       cnpj,
       tipoUnidade: tipoUnidade ?? null,
@@ -117,7 +125,7 @@ export async function PUT(request: NextRequest, { params }: Params) {
   return Response.json(empresa);
 }
 
-export async function DELETE(request: NextRequest, { params }: Params) {
+async function DELETE_handler(request: NextRequest, { params }: Params) {
   const usuario = await getUsuarioFromRequest(request);
   if (!usuario) {
     return Response.json({ error: "Não autenticado" }, { status: 401 });
@@ -127,7 +135,11 @@ export async function DELETE(request: NextRequest, { params }: Params) {
   }
 
   const { id } = await params;
-  const empresa = await prisma.empresa.findUnique({ where: { id: Number(id) } });
+
+  const idNum = parseId(id);
+
+  if (idNum === null) return Response.json({ error: "ID inválido" }, { status: 400 });
+  const empresa = await prisma.empresa.findUnique({ where: { id: idNum } });
   if (!empresa) return Response.json({ error: "Empresa não encontrada" }, { status: 404 });
 
   await registrarAuditoria({
@@ -136,6 +148,10 @@ export async function DELETE(request: NextRequest, { params }: Params) {
     acao: "exclusao",
   });
 
-  await prisma.empresa.delete({ where: { id: Number(id) } });
+  await prisma.empresa.delete({ where: { id: idNum } });
   return Response.json({ ok: true });
 }
+
+export const GET = withErrorHandling(GET_handler);
+export const PUT = withErrorHandling(PUT_handler);
+export const DELETE = withErrorHandling(DELETE_handler);

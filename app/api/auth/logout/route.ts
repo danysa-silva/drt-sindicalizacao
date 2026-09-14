@@ -1,6 +1,7 @@
 import { buildLogoutCookie } from "@/lib/auth";
+import { withErrorHandling } from "@/lib/api-handler";
 
-export async function POST() {
+async function POST_handler() {
   return Response.json(
     { ok: true },
     {
@@ -10,3 +11,5 @@ export async function POST() {
     }
   );
 }
+
+export const POST = withErrorHandling(POST_handler);

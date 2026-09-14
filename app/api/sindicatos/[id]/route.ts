@@ -3,6 +3,8 @@ import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { getUsuarioFromRequest, podeAlterar } from "@/lib/auth";
 import { registrarAuditoria } from "@/lib/auditoria";
+import { withErrorHandling } from "@/lib/api-handler";
+import { parseId } from "@/lib/parse-id";
 
 type Params = { params: Promise<{ id: string }> };
 
@@ -31,22 +33,26 @@ const sindicatoSchema = z.object({
   observacoes: z.string().nullish(),
 });
 
-export async function GET(request: NextRequest, { params }: Params) {
+async function GET_handler(request: NextRequest, { params }: Params) {
   const usuario = await getUsuarioFromRequest(request);
   if (!usuario) {
     return Response.json({ error: "Não autenticado" }, { status: 401 });
   }
 
   const { id } = await params;
+
+  const idNum = parseId(id);
+
+  if (idNum === null) return Response.json({ error: "ID inválido" }, { status: 400 });
   const sindicato = await prisma.sindicato.findUnique({
-    where: { id: Number(id) },
+    where: { id: idNum },
     include: { presidentes: { orderBy: { createdAt: "desc" } }, empresas: true },
   });
   if (!sindicato) return Response.json({ error: "Sindicato não encontrado" }, { status: 404 });
   return Response.json(sindicato);
 }
 
-export async function PUT(request: NextRequest, { params }: Params) {
+async function PUT_handler(request: NextRequest, { params }: Params) {
   const usuario = await getUsuarioFromRequest(request);
   if (!usuario) {
     return Response.json({ error: "Não autenticado" }, { status: 401 });
@@ -56,6 +62,10 @@ export async function PUT(request: NextRequest, { params }: Params) {
   }
 
   const { id } = await params;
+
+  const idNum = parseId(id);
+
+  if (idNum === null) return Response.json({ error: "ID inválido" }, { status: 400 });
   const body = await request.json();
   const resultado = sindicatoSchema.safeParse(body);
   if (!resultado.success) {
@@ -66,14 +76,14 @@ export async function PUT(request: NextRequest, { params }: Params) {
   const { nome, tipo, cnpj, afinidadeFieam, validadeMandato, observacoes } = resultado.data;
 
   const existing = await prisma.sindicato.findFirst({
-    where: { nome, NOT: { id: Number(id) } },
+    where: { nome, NOT: { id: idNum } },
   });
   if (existing) {
     return Response.json({ error: "Sindicato com esse nome já cadastrado" }, { status: 409 });
   }
 
   const sindicato = await prisma.sindicato.update({
-    where: { id: Number(id) },
+    where: { id: idNum },
     data: {
       nome,
       tipo,
@@ -98,7 +108,7 @@ export async function PUT(request: NextRequest, { params }: Params) {
   return Response.json(sindicato);
 }
 
-export async function DELETE(request: NextRequest, { params }: Params) {
+async function DELETE_handler(request: NextRequest, { params }: Params) {
   const usuario = await getUsuarioFromRequest(request);
   if (!usuario) {
     return Response.json({ error: "Não autenticado" }, { status: 401 });
@@ -108,12 +118,16 @@ export async function DELETE(request: NextRequest, { params }: Params) {
   }
 
   const { id } = await params;
-  const sindicato = await prisma.sindicato.findUnique({ where: { id: Number(id) } });
+
+  const idNum = parseId(id);
+
+  if (idNum === null) return Response.json({ error: "ID inválido" }, { status: 400 });
+  const sindicato = await prisma.sindicato.findUnique({ where: { id: idNum } });
   if (!sindicato) {
     return Response.json({ error: "Sindicato não encontrado" }, { status: 404 });
   }
 
-  await prisma.sindicato.delete({ where: { id: Number(id) } });
+  await prisma.sindicato.delete({ where: { id: idNum } });
 
   await registrarAuditoria({
     entidadeNome: sindicato.nome,
@@ -128,3 +142,7 @@ export async function DELETE(request: NextRequest, { params }: Params) {
 
   return Response.json({ ok: true });
 }
+
+export const GET = withErrorHandling(GET_handler);
+export const PUT = withErrorHandling(PUT_handler);
+export const DELETE = withErrorHandling(DELETE_handler);

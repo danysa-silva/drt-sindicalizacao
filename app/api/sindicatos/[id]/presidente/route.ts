@@ -1,10 +1,12 @@
 import { NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getUsuarioFromRequest, podeAlterar } from "@/lib/auth";
+import { withErrorHandling } from "@/lib/api-handler";
+import { parseId } from "@/lib/parse-id";
 
 type Params = { params: Promise<{ id: string }> };
 
-export async function PUT(request: NextRequest, { params }: Params) {
+async function PUT_handler(request: NextRequest, { params }: Params) {
   const usuario = await getUsuarioFromRequest(request);
   if (!usuario) {
     return Response.json({ error: "Não autenticado" }, { status: 401 });
@@ -14,7 +16,11 @@ export async function PUT(request: NextRequest, { params }: Params) {
   }
 
   const { id } = await params;
-  const sindicatoId = Number(id);
+
+  const idNum = parseId(id);
+
+  if (idNum === null) return Response.json({ error: "ID inválido" }, { status: 400 });
+  const sindicatoId = idNum;
   const body = await request.json();
   const representanteId: number | null = body.representanteId ? Number(body.representanteId) : null;
 
@@ -34,3 +40,5 @@ export async function PUT(request: NextRequest, { params }: Params) {
 
   return Response.json({ ok: true });
 }
+
+export const PUT = withErrorHandling(PUT_handler);

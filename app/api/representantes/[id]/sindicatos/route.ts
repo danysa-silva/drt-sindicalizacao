@@ -3,6 +3,8 @@ import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { getUsuarioFromRequest, podeAlterar } from "@/lib/auth";
 import { registrarAuditoria } from "@/lib/auditoria";
+import { withErrorHandling } from "@/lib/api-handler";
+import { parseId } from "@/lib/parse-id";
 
 type Params = { params: Promise<{ id: string }> };
 
@@ -43,20 +45,24 @@ const vinculoSindicatoSchema = z.object({
     .transform((v) => (v === "" || v == null ? null : new Date(v))),
 });
 
-export async function GET(request: NextRequest, { params }: Params) {
+async function GET_handler(request: NextRequest, { params }: Params) {
   const usuario = await getUsuarioFromRequest(request);
   if (!usuario) {
     return Response.json({ error: "Não autenticado" }, { status: 401 });
   }
 
   const { id } = await params;
-  const representante = await prisma.representante.findUnique({ where: { id: Number(id) } });
+
+  const idNum = parseId(id);
+
+  if (idNum === null) return Response.json({ error: "ID inválido" }, { status: 400 });
+  const representante = await prisma.representante.findUnique({ where: { id: idNum } });
   if (!representante) {
     return Response.json({ error: "Representante não encontrado" }, { status: 404 });
   }
 
   const vinculos = await prisma.representanteSindicato.findMany({
-    where: { representanteId: Number(id) },
+    where: { representanteId: idNum },
     include: { sindicato: { select: { id: true, nome: true, tipo: true } } },
     orderBy: { createdAt: "desc" },
   });
@@ -64,7 +70,7 @@ export async function GET(request: NextRequest, { params }: Params) {
   return Response.json(vinculos);
 }
 
-export async function POST(request: NextRequest, { params }: Params) {
+async function POST_handler(request: NextRequest, { params }: Params) {
   const usuario = await getUsuarioFromRequest(request);
   if (!usuario) {
     return Response.json({ error: "Não autenticado" }, { status: 401 });
@@ -74,6 +80,10 @@ export async function POST(request: NextRequest, { params }: Params) {
   }
 
   const { id } = await params;
+
+  const idNum = parseId(id);
+
+  if (idNum === null) return Response.json({ error: "ID inválido" }, { status: 400 });
   const body = await request.json();
   const resultado = vinculoSindicatoSchema.safeParse(body);
   if (!resultado.success) {
@@ -83,7 +93,7 @@ export async function POST(request: NextRequest, { params }: Params) {
 
   const { sindicatoId, papel, dataInicio, dataFim } = resultado.data;
 
-  const representante = await prisma.representante.findUnique({ where: { id: Number(id) } });
+  const representante = await prisma.representante.findUnique({ where: { id: idNum } });
   if (!representante) {
     return Response.json({ error: "Representante não encontrado" }, { status: 404 });
   }
@@ -95,7 +105,7 @@ export async function POST(request: NextRequest, { params }: Params) {
 
   const existente = await prisma.representanteSindicato.findFirst({
     where: {
-      representanteId: Number(id),
+      representanteId: idNum,
       sindicatoId,
       papel,
       dataInicio: dataInicio ?? null,
@@ -107,7 +117,7 @@ export async function POST(request: NextRequest, { params }: Params) {
 
   const vinculo = await prisma.representanteSindicato.create({
     data: {
-      representanteId: Number(id),
+      representanteId: idNum,
       sindicatoId,
       papel,
       dataInicio: dataInicio ?? null,
@@ -129,3 +139,6 @@ export async function POST(request: NextRequest, { params }: Params) {
 
   return Response.json(vinculo, { status: 201 });
 }
+
+export const GET = withErrorHandling(GET_handler);
+export const POST = withErrorHandling(POST_handler);

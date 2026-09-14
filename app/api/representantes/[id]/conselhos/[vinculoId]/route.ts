@@ -2,10 +2,12 @@ import { NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getUsuarioFromRequest, podeAlterar } from "@/lib/auth";
 import { registrarAuditoria } from "@/lib/auditoria";
+import { withErrorHandling } from "@/lib/api-handler";
+import { parseId } from "@/lib/parse-id";
 
 type Params = { params: Promise<{ id: string; vinculoId: string }> };
 
-export async function DELETE(request: NextRequest, { params }: Params) {
+async function DELETE_handler(request: NextRequest, { params }: Params) {
   const usuario = await getUsuarioFromRequest(request);
   if (!usuario) {
     return Response.json({ error: "Não autenticado" }, { status: 401 });
@@ -15,8 +17,13 @@ export async function DELETE(request: NextRequest, { params }: Params) {
   }
 
   const { vinculoId } = await params;
+  const vinculoIdNum = parseId(vinculoId);
+  if (vinculoIdNum === null) {
+    return Response.json({ error: "ID inválido" }, { status: 400 });
+  }
+
   const vinculo = await prisma.representanteConselho.findUnique({
-    where: { id: Number(vinculoId) },
+    where: { id: vinculoIdNum },
     include: {
       representante: { select: { nome: true } },
       conselho: { select: { nome: true } },
@@ -26,7 +33,7 @@ export async function DELETE(request: NextRequest, { params }: Params) {
     return Response.json({ error: "Vínculo não encontrado" }, { status: 404 });
   }
 
-  await prisma.representanteConselho.delete({ where: { id: Number(vinculoId) } });
+  await prisma.representanteConselho.delete({ where: { id: vinculoIdNum } });
 
   await registrarAuditoria({
     entidadeNome: vinculo.representante.nome,
@@ -41,3 +48,5 @@ export async function DELETE(request: NextRequest, { params }: Params) {
 
   return Response.json({ ok: true });
 }
+
+export const DELETE = withErrorHandling(DELETE_handler);

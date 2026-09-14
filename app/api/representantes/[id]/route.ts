@@ -3,6 +3,8 @@ import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { getUsuarioFromRequest, podeAlterar } from "@/lib/auth";
 import { registrarAuditoria } from "@/lib/auditoria";
+import { withErrorHandling } from "@/lib/api-handler";
+import { parseId } from "@/lib/parse-id";
 
 type Params = { params: Promise<{ id: string }> };
 
@@ -30,15 +32,19 @@ const representanteSchema = z.object({
   observacoes: z.string().nullish(),
 });
 
-export async function GET(request: NextRequest, { params }: Params) {
+async function GET_handler(request: NextRequest, { params }: Params) {
   const usuario = await getUsuarioFromRequest(request);
   if (!usuario) {
     return Response.json({ error: "Não autenticado" }, { status: 401 });
   }
 
   const { id } = await params;
+
+  const idNum = parseId(id);
+
+  if (idNum === null) return Response.json({ error: "ID inválido" }, { status: 400 });
   const representante = await prisma.representante.findUnique({
-    where: { id: Number(id) },
+    where: { id: idNum },
     include: {
       sindicatos: {
         include: { sindicato: { select: { id: true, nome: true, tipo: true } } },
@@ -58,7 +64,7 @@ export async function GET(request: NextRequest, { params }: Params) {
   return Response.json(representante);
 }
 
-export async function PUT(request: NextRequest, { params }: Params) {
+async function PUT_handler(request: NextRequest, { params }: Params) {
   const usuario = await getUsuarioFromRequest(request);
   if (!usuario) {
     return Response.json({ error: "Não autenticado" }, { status: 401 });
@@ -68,6 +74,10 @@ export async function PUT(request: NextRequest, { params }: Params) {
   }
 
   const { id } = await params;
+
+  const idNum = parseId(id);
+
+  if (idNum === null) return Response.json({ error: "ID inválido" }, { status: 400 });
   const body = await request.json();
   const resultado = representanteSchema.safeParse(body);
   if (!resultado.success) {
@@ -77,14 +87,14 @@ export async function PUT(request: NextRequest, { params }: Params) {
 
   const { nome, cpf, email, telefone, observacoes } = resultado.data;
 
-  const atual = await prisma.representante.findUnique({ where: { id: Number(id) } });
+  const atual = await prisma.representante.findUnique({ where: { id: idNum } });
   if (!atual) {
     return Response.json({ error: "Representante não encontrado" }, { status: 404 });
   }
 
   if (cpf) {
     const existente = await prisma.representante.findFirst({
-      where: { cpf, NOT: { id: Number(id) } },
+      where: { cpf, NOT: { id: idNum } },
     });
     if (existente) {
       return Response.json({ error: "CPF já cadastrado em outro representante" }, { status: 409 });
@@ -92,7 +102,7 @@ export async function PUT(request: NextRequest, { params }: Params) {
   }
 
   const representante = await prisma.representante.update({
-    where: { id: Number(id) },
+    where: { id: idNum },
     data: {
       nome,
       cpf: cpf ?? null,
@@ -116,7 +126,7 @@ export async function PUT(request: NextRequest, { params }: Params) {
   return Response.json(representante);
 }
 
-export async function DELETE(request: NextRequest, { params }: Params) {
+async function DELETE_handler(request: NextRequest, { params }: Params) {
   const usuario = await getUsuarioFromRequest(request);
   if (!usuario) {
     return Response.json({ error: "Não autenticado" }, { status: 401 });
@@ -126,12 +136,16 @@ export async function DELETE(request: NextRequest, { params }: Params) {
   }
 
   const { id } = await params;
-  const representante = await prisma.representante.findUnique({ where: { id: Number(id) } });
+
+  const idNum = parseId(id);
+
+  if (idNum === null) return Response.json({ error: "ID inválido" }, { status: 400 });
+  const representante = await prisma.representante.findUnique({ where: { id: idNum } });
   if (!representante) {
     return Response.json({ error: "Representante não encontrado" }, { status: 404 });
   }
 
-  await prisma.representante.delete({ where: { id: Number(id) } });
+  await prisma.representante.delete({ where: { id: idNum } });
 
   await registrarAuditoria({
     entidadeNome: representante.nome,
@@ -146,3 +160,7 @@ export async function DELETE(request: NextRequest, { params }: Params) {
 
   return Response.json({ ok: true });
 }
+
+export const GET = withErrorHandling(GET_handler);
+export const PUT = withErrorHandling(PUT_handler);
+export const DELETE = withErrorHandling(DELETE_handler);

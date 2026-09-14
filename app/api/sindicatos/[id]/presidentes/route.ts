@@ -2,6 +2,8 @@ import { NextRequest } from "next/server";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { getUsuarioFromRequest, podeAlterar } from "@/lib/auth";
+import { withErrorHandling } from "@/lib/api-handler";
+import { parseId } from "@/lib/parse-id";
 
 type Params = { params: Promise<{ id: string }> };
 
@@ -38,16 +40,18 @@ const presidenteSchema = z.object({
     .transform((v) => (v === "" || v == null ? null : new Date(v))),
 });
 
-export async function GET(_request: NextRequest, { params }: Params) {
+async function GET_handler(_request: NextRequest, { params }: Params) {
   const { id } = await params;
+  const idNum = parseId(id);
+  if (idNum === null) return Response.json({ error: "ID inválido" }, { status: 400 });
   const presidentes = await prisma.presidenteSindicato.findMany({
-    where: { sindicatoId: Number(id) },
+    where: { sindicatoId: idNum },
     orderBy: { createdAt: "desc" },
   });
   return Response.json(presidentes);
 }
 
-export async function POST(request: NextRequest, { params }: Params) {
+async function POST_handler(request: NextRequest, { params }: Params) {
   const usuario = await getUsuarioFromRequest(request);
   if (!usuario) {
     return Response.json({ error: "Não autenticado" }, { status: 401 });
@@ -57,6 +61,10 @@ export async function POST(request: NextRequest, { params }: Params) {
   }
 
   const { id } = await params;
+
+  const idNum = parseId(id);
+
+  if (idNum === null) return Response.json({ error: "ID inválido" }, { status: 400 });
   const body = await request.json();
   const resultado = presidenteSchema.safeParse(body);
   if (!resultado.success) {
@@ -68,7 +76,7 @@ export async function POST(request: NextRequest, { params }: Params) {
 
   const presidente = await prisma.presidenteSindicato.create({
     data: {
-      sindicatoId: Number(id),
+      sindicatoId: idNum,
       nome,
       cargo: cargo ?? null,
       email,
@@ -80,3 +88,6 @@ export async function POST(request: NextRequest, { params }: Params) {
 
   return Response.json(presidente, { status: 201 });
 }
+
+export const GET = withErrorHandling(GET_handler);
+export const POST = withErrorHandling(POST_handler);

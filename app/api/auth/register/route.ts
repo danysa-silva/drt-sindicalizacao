@@ -3,6 +3,7 @@ import { z } from "zod";
 import bcrypt from "bcryptjs";
 import { prisma } from "@/lib/prisma";
 import { signToken, buildTokenCookie } from "@/lib/auth";
+import { withErrorHandling } from "@/lib/api-handler";
 
 const ADMINS_INICIAIS = ["danielle.sa@fieam.org.br"];
 
@@ -34,7 +35,7 @@ const registerSchema = z.object({
     .min(6, { message: "A senha deve ter pelo menos 6 caracteres" }),
 });
 
-export async function POST(request: NextRequest) {
+async function POST_handler(request: NextRequest) {
   const body = await request.json();
   const resultado = registerSchema.safeParse(body);
   if (!resultado.success) {
@@ -86,3 +87,5 @@ export async function POST(request: NextRequest) {
     }
   );
 }
+
+export const POST = withErrorHandling(POST_handler);

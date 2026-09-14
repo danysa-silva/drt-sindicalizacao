@@ -2,8 +2,9 @@ import { NextRequest } from "next/server";
 import bcrypt from "bcryptjs";
 import { prisma } from "@/lib/prisma";
 import { signToken, buildTokenCookie } from "@/lib/auth";
+import { withErrorHandling } from "@/lib/api-handler";
 
-export async function POST(request: NextRequest) {
+async function POST_handler(request: NextRequest) {
   const { email, senha } = await request.json();
 
   if (!email || !senha) {
@@ -66,3 +67,5 @@ export async function POST(request: NextRequest) {
     }
   );
 }
+
+export const POST = withErrorHandling(POST_handler);

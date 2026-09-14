@@ -3,6 +3,8 @@ import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { getUsuarioFromRequest, podeAlterar } from "@/lib/auth";
 import { registrarAuditoria } from "@/lib/auditoria";
+import { withErrorHandling } from "@/lib/api-handler";
+import { parseId } from "@/lib/parse-id";
 
 type Params = { params: Promise<{ id: string }> };
 
@@ -37,17 +39,19 @@ const conselhoSchema = z.object({
     .transform((v) => (v === "" ? null : v ?? null)),
 });
 
-export async function GET(_request: NextRequest, { params }: Params) {
+async function GET_handler(_request: NextRequest, { params }: Params) {
   const { id } = await params;
+  const idNum = parseId(id);
+  if (idNum === null) return Response.json({ error: "ID inválido" }, { status: 400 });
   const conselho = await prisma.conselho.findUnique({
-    where: { id: Number(id) },
+    where: { id: idNum },
     include: { empresas: { include: { empresa: true } } },
   });
   if (!conselho) return Response.json({ error: "Conselho não encontrado" }, { status: 404 });
   return Response.json(conselho);
 }
 
-export async function PUT(request: NextRequest, { params }: Params) {
+async function PUT_handler(request: NextRequest, { params }: Params) {
   const usuario = await getUsuarioFromRequest(request);
   if (!usuario) {
     return Response.json({ error: "Não autenticado" }, { status: 401 });
@@ -57,6 +61,10 @@ export async function PUT(request: NextRequest, { params }: Params) {
   }
 
   const { id } = await params;
+
+  const idNum = parseId(id);
+
+  if (idNum === null) return Response.json({ error: "ID inválido" }, { status: 400 });
   const body = await request.json();
   const resultado = conselhoSchema.safeParse(body);
   if (!resultado.success) {
@@ -67,14 +75,14 @@ export async function PUT(request: NextRequest, { params }: Params) {
   const { nome, tipo, titular, suplente, titularId, suplenteId, telefone, email } = resultado.data;
 
   const existing = await prisma.conselho.findFirst({
-    where: { nome, NOT: { id: Number(id) } },
+    where: { nome, NOT: { id: idNum } },
   });
   if (existing) {
     return Response.json({ error: "Conselho com esse nome já cadastrado" }, { status: 409 });
   }
 
   const conselho = await prisma.conselho.update({
-    where: { id: Number(id) },
+    where: { id: idNum },
     data: {
       nome,
       tipo,
@@ -101,7 +109,7 @@ export async function PUT(request: NextRequest, { params }: Params) {
   return Response.json(conselho);
 }
 
-export async function DELETE(request: NextRequest, { params }: Params) {
+async function DELETE_handler(request: NextRequest, { params }: Params) {
   const usuario = await getUsuarioFromRequest(request);
   if (!usuario) {
     return Response.json({ error: "Não autenticado" }, { status: 401 });
@@ -111,12 +119,16 @@ export async function DELETE(request: NextRequest, { params }: Params) {
   }
 
   const { id } = await params;
-  const conselho = await prisma.conselho.findUnique({ where: { id: Number(id) } });
+
+  const idNum = parseId(id);
+
+  if (idNum === null) return Response.json({ error: "ID inválido" }, { status: 400 });
+  const conselho = await prisma.conselho.findUnique({ where: { id: idNum } });
   if (!conselho) {
     return Response.json({ error: "Conselho não encontrado" }, { status: 404 });
   }
 
-  await prisma.conselho.delete({ where: { id: Number(id) } });
+  await prisma.conselho.delete({ where: { id: idNum } });
 
   await registrarAuditoria({
     entidadeNome: conselho.nome,
@@ -131,3 +143,7 @@ export async function DELETE(request: NextRequest, { params }: Params) {
 
   return Response.json({ ok: true });
 }
+
+export const GET = withErrorHandling(GET_handler);
+export const PUT = withErrorHandling(PUT_handler);
+export const DELETE = withErrorHandling(DELETE_handler);

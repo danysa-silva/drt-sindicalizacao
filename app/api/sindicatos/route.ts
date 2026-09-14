@@ -3,6 +3,7 @@ import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { getUsuarioFromRequest, podeAlterar } from "@/lib/auth";
 import { registrarAuditoria } from "@/lib/auditoria";
+import { withErrorHandling } from "@/lib/api-handler";
 
 const sindicatoSchema = z.object({
   nome: z
@@ -29,7 +30,7 @@ const sindicatoSchema = z.object({
   observacoes: z.string().nullish(),
 });
 
-export async function GET(request: NextRequest) {
+async function GET_handler(request: NextRequest) {
   const usuario = await getUsuarioFromRequest(request);
   if (!usuario) {
     return Response.json({ error: "Não autenticado" }, { status: 401 });
@@ -48,7 +49,7 @@ export async function GET(request: NextRequest) {
   return Response.json(sindicatos);
 }
 
-export async function POST(request: NextRequest) {
+async function POST_handler(request: NextRequest) {
   const usuario = await getUsuarioFromRequest(request);
   if (!usuario) {
     return Response.json({ error: "Não autenticado" }, { status: 401 });
@@ -95,3 +96,6 @@ export async function POST(request: NextRequest) {
 
   return Response.json(sindicato, { status: 201 });
 }
+
+export const GET = withErrorHandling(GET_handler);
+export const POST = withErrorHandling(POST_handler);

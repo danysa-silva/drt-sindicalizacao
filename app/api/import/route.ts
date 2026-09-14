@@ -1,6 +1,7 @@
 import { NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getUsuarioFromRequest, podeAlterar } from "@/lib/auth";
+import { withErrorHandling } from "@/lib/api-handler";
 
 const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5 MB
 
@@ -44,7 +45,7 @@ type LinhaErro = {
   motivo: string;
 };
 
-export async function POST(request: NextRequest) {
+async function POST_handler(request: NextRequest) {
   const usuario = await getUsuarioFromRequest(request);
   if (!usuario) {
     return Response.json({ error: "Não autenticado" }, { status: 401 });
@@ -168,3 +169,5 @@ export async function POST(request: NextRequest) {
 
   return Response.json({ criados, atualizados, erros: linhasComErro.length, linhasComErro });
 }
+
+export const POST = withErrorHandling(POST_handler);
